@@ -1,10 +1,10 @@
 name: bouncy_button
 description: A highly customizable Flutter button widget with engaging 3D depth effects, smooth animations, and extensive styling options. Create beautiful, interactive buttons that respond to user input with satisfying visual feedback.
 version: 1.0.0
-homepage: https://github.com/yourusername/bouncy_button
-repository: https://github.com/yourusername/bouncy_button
-issue_tracker: https://github.com/yourusername/bouncy_button/issues
-documentation: https://github.com/yourusername/bouncy_button#readme
+homepage: https://github.com/Ibrahim-Lokman/bouncy_button
+repository: https://github.com/Ibrahim-Lokman/bouncy_button
+issue_tracker: https://github.com/Ibrahim-Lokman/bouncy_button/issues
+documentation: https://github.com/Ibrahim-Lokman/bouncy_button/blob/main/README.md
 
 environment:
   sdk: ^3.6.0
