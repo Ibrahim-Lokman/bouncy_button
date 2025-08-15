@@ -18,3 +18,7 @@
 ## [1.0.2] - 2024-01-15
 
 - Minor changes in example app
+
+## [1.0.3] - 2024-01-15
+
+- Updated Readme file with png and gif
