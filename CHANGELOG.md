@@ -10,3 +10,7 @@
 - Color manipulation utilities
 - Full accessibility support
 - Comprehensive documentation and examples
+
+## [1.0.1] - 2024-01-15
+
+- Added Git Repository Info
