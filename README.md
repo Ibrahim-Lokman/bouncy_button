@@ -21,3 +21,21 @@ Add this to your package's `pubspec.yaml` file:
 dependencies:
   bouncy_button: ^1.0.0
 ```
+
+## Demo
+
+<div align="center">
+  <img src="gifs/gif_1.gif" alt="Basic and Animated Button Demo" style="width: 100%; max-width: 400px;">
+  <br><br>
+  <img src="gifs/gif_2.gif" alt="Styled and Interactive Button Demo" style="width: 100%; max-width: 400px;">
+</div>
+
+## Screenshots
+
+### Light Theme
+
+<img src="screenshots/ss1.png" alt="Basic and Animated Buttons" width="300"> <img src="screenshots/ss2.png" alt="Styled and Icon Buttons" width="300">
+
+### Dark Theme
+
+<img src="screenshots/ss3.png" alt="Animated and Styled Buttons" width="300"> <img src="screenshots/ss4.png" alt="Interactive and State Buttons" width="300">
