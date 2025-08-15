@@ -1,0 +1,22 @@
+include: package:flutter_lints/flutter.yaml
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    - public_member_api_docs
+    - prefer_single_quotes
+    - require_trailing_commas
+    - sort_constructors_first
+    - prefer_final_fields
+    - prefer_const_constructors
+    - use_key_in_widget_constructors
+    - avoid_print
+    - avoid_unnecessary_containers
+    - prefer_const_literals_to_create_immutables
+
+analyzer:
+  exclude:
+    - example/**
+  errors:
+    todo: ignore
