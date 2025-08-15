@@ -22,3 +22,7 @@
 ## [1.0.3] - 2024-01-15
 
 - Updated Readme file with png and gif
+
+## [1.0.4] - 2024-01-15
+
+- Improved documentation
