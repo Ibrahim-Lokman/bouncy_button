@@ -14,3 +14,7 @@
 ## [1.0.1] - 2024-01-15
 
 - Added Git Repository Info
+
+## [1.0.2] - 2024-01-15
+
+- Minor changes in example app
