@@ -144,7 +144,7 @@ class BouncyButtonGroup<T> extends StatelessWidget {
         .topLeft;
     final segmentInteraction = interaction ??
         const BouncyButtonInteraction(
-          hapticFeedbackType: HapticFeedbackType.selection,
+          hapticFeedbackType: BouncyHapticFeedbackType.selection,
         );
 
     return LayoutBuilder(

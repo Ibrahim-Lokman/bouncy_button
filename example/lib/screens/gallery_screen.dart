@@ -540,7 +540,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       title: 'Interaction',
       subtitle: 'Haptics, ripple, long press, and accessibility.',
       children: [
-        for (final type in HapticFeedbackType.values)
+        for (final type in BouncyHapticFeedbackType.values)
           BouncyButton(
             onPressed: _log('Haptic ${type.name}'),
             interaction: BouncyButtonInteraction(hapticFeedbackType: type),
@@ -623,7 +623,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
           onTap: _log('Pressable tile'),
           onLongPress: _log('Pressable long press'),
           scaleFactor: 0.85,
-          haptic: HapticFeedbackType.medium,
+          haptic: BouncyHapticFeedbackType.medium,
           child: tile('scaleFactor 0.85', scheme.tertiary),
         ),
         BouncyPressable(

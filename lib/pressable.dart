@@ -3,7 +3,8 @@ library;
 
 export 'src/async_builder.dart';
 export 'src/controller.dart' show BouncyButtonController;
-export 'src/enums.dart' show BouncyButtonStatus, HapticFeedbackType;
+export 'src/enums.dart'
+    show BouncyButtonStatus, BouncyHapticFeedbackType, HapticFeedbackType;
 export 'src/feedback.dart';
 export 'src/exclusive_scope.dart' show BouncyExclusiveScope;
 export 'src/pressable.dart';

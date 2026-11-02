@@ -137,7 +137,7 @@ class PressCore extends StatefulWidget {
   final bool enabled;
 
   /// The haptic feedback for a press, or null for none.
-  final HapticFeedbackType? haptic;
+  final BouncyHapticFeedbackType? haptic;
 
   /// The mouse cursor. Defaults to a click cursor when enabled.
   final MouseCursor? cursor;
@@ -526,15 +526,15 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
 
   void _provideHapticFeedback() {
     switch (widget.haptic) {
-      case HapticFeedbackType.light:
+      case BouncyHapticFeedbackType.light:
         HapticFeedback.lightImpact();
-      case HapticFeedbackType.medium:
+      case BouncyHapticFeedbackType.medium:
         HapticFeedback.mediumImpact();
-      case HapticFeedbackType.heavy:
+      case BouncyHapticFeedbackType.heavy:
         HapticFeedback.heavyImpact();
-      case HapticFeedbackType.selection:
+      case BouncyHapticFeedbackType.selection:
         HapticFeedback.selectionClick();
-      case HapticFeedbackType.vibrate:
+      case BouncyHapticFeedbackType.vibrate:
         HapticFeedback.vibrate();
       case null:
         break;

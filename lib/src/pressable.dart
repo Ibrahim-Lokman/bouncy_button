@@ -98,7 +98,7 @@ class BouncyPressable extends StatelessWidget {
   final BouncyPressSpring? spring;
 
   /// Haptic feedback for a press. Off by default.
-  final HapticFeedbackType? haptic;
+  final BouncyHapticFeedbackType? haptic;
 
   /// Whether to play the system click sound on a press. The platform may
   /// have no such sound, and web plays nothing.

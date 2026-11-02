@@ -13,7 +13,7 @@ void main() {
           child: BouncyExclusiveScope(
             child: BouncyPressable(
               onTap: () => taps++,
-              haptic: HapticFeedbackType.light,
+              haptic: BouncyHapticFeedbackType.light,
               child: const Text('x'),
             ),
           ),

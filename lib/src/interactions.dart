@@ -13,7 +13,7 @@ class BouncyButtonInteraction {
   /// Creates an interaction configuration.
   const BouncyButtonInteraction({
     this.enableHapticFeedback = true,
-    this.hapticFeedbackType = HapticFeedbackType.light,
+    this.hapticFeedbackType = BouncyHapticFeedbackType.light,
     this.cursor,
     this.enableSplash = false,
     this.splashColor,
@@ -30,7 +30,7 @@ class BouncyButtonInteraction {
   final bool enableHapticFeedback;
 
   /// Type of haptic feedback.
-  final HapticFeedbackType hapticFeedbackType;
+  final BouncyHapticFeedbackType hapticFeedbackType;
 
   /// Mouse cursor when hovering over the button.
   final MouseCursor? cursor;
@@ -77,7 +77,7 @@ class BouncyButtonInteraction {
   /// Creates a copy with modified fields.
   BouncyButtonInteraction copyWith({
     bool? enableHapticFeedback,
-    HapticFeedbackType? hapticFeedbackType,
+    BouncyHapticFeedbackType? hapticFeedbackType,
     MouseCursor? cursor,
     bool? enableSplash,
     Color? splashColor,

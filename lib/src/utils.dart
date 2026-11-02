@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 // lib/src/utils.dart
 // ============================================================================
 
-/// Extension for gradient manipulation.
-extension GradientExtension on Gradient {
+/// Color adjustments for gradients.
+extension BouncyGradientExtension on Gradient {
   /// Multiplies the lightness of each gradient color by [factor].
   Gradient scaleLightness(double factor) {
     final scaledColors = colors.map((color) {
@@ -53,13 +53,22 @@ extension GradientExtension on Gradient {
 
     return this;
   }
+}
 
+/// The old name of [BouncyGradientExtension], kept for its deprecated
+/// [scale] method.
+@Deprecated(
+  'Use BouncyGradientExtension instead. The old name could clash with other '
+  'packages. Deprecated in 2.1.0.',
+)
+extension GradientExtension on Gradient {
   /// Multiplies the lightness of each gradient color by [factor].
   ///
   /// `gradient.scale(0.6)` always calls [Gradient.scale], which fades colors
   /// instead, so this method only runs with explicit extension syntax.
   @Deprecated('Use scaleLightness instead.')
-  Gradient scale(double factor) => scaleLightness(factor);
+  Gradient scale(double factor) =>
+      BouncyGradientExtension(this).scaleLightness(factor);
 }
 
 /// Utility class for color manipulation.

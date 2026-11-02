@@ -43,6 +43,8 @@ class BouncyButtonStyle {
     this.textStyle,
     this.iconSize,
     this.pressedBorderRadius,
+    this.tone = BouncyButtonTone.normal,
+    this.minTapTarget,
   });
 
   /// A light depth shade, for [shadowDarkness].
@@ -223,6 +225,17 @@ class BouncyButtonStyle {
   /// used with [decoration] or [shadowDecoration].
   final BorderRadiusGeometry? pressedBorderRadius;
 
+  /// The meaning of the button. [BouncyButtonTone.destructive] uses the
+  /// theme's error colors for every fill. Colors set on this style still win.
+  final BouncyButtonTone tone;
+
+  /// The smallest width and height of the tap area, such as 48.
+  ///
+  /// A button drawn smaller than this keeps its look, centered in a larger
+  /// tap area. This adds layout space around it. If null, the tap area is the
+  /// button itself.
+  final double? minTapTarget;
+
   /// Creates a copy with modified fields.
   BouncyButtonStyle copyWith({
     double? height,
@@ -254,6 +267,8 @@ class BouncyButtonStyle {
     TextStyle? textStyle,
     double? iconSize,
     BorderRadiusGeometry? pressedBorderRadius,
+    BouncyButtonTone? tone,
+    double? minTapTarget,
   }) {
     return BouncyButtonStyle(
       height: height ?? this.height,
@@ -285,6 +300,8 @@ class BouncyButtonStyle {
       textStyle: textStyle ?? this.textStyle,
       iconSize: iconSize ?? this.iconSize,
       pressedBorderRadius: pressedBorderRadius ?? this.pressedBorderRadius,
+      tone: tone ?? this.tone,
+      minTapTarget: minTapTarget ?? this.minTapTarget,
     );
   }
 
@@ -322,7 +339,9 @@ class BouncyButtonStyle {
         other.fill == fill &&
         other.textStyle == textStyle &&
         other.iconSize == iconSize &&
-        other.pressedBorderRadius == pressedBorderRadius;
+        other.pressedBorderRadius == pressedBorderRadius &&
+        other.tone == tone &&
+        other.minTapTarget == minTapTarget;
   }
 
   @override
@@ -356,6 +375,8 @@ class BouncyButtonStyle {
         textStyle,
         iconSize,
         pressedBorderRadius,
+        tone,
+        minTapTarget,
       ]);
 
   /// Primary button style with standard elevation and padding.
@@ -419,6 +440,19 @@ class BouncyButtonStyle {
     borderRadius: BorderRadius.all(Radius.circular(12)),
     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
     fill: BouncyButtonFill.ghost,
+  );
+
+  /// Destructive style: a filled button in the theme's error color, for
+  /// actions that delete or remove something.
+  ///
+  /// Combine it with another fill through [copyWith], such as
+  /// `BouncyButtonStyle.destructive.copyWith(fill: BouncyButtonFill.outlined)`.
+  static const BouncyButtonStyle destructive = BouncyButtonStyle(
+    height: 48,
+    elevation: 6,
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    tone: BouncyButtonTone.destructive,
   );
 
   /// Glass style: a translucent, blurred face with no depth.

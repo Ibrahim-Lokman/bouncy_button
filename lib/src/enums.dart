@@ -81,8 +81,15 @@ enum BouncyButtonTone {
   destructive,
 }
 
+/// The old name of [BouncyHapticFeedbackType].
+@Deprecated(
+  'Use BouncyHapticFeedbackType instead. The old name could clash with other '
+  'packages. Deprecated in 2.1.0.',
+)
+typedef HapticFeedbackType = BouncyHapticFeedbackType;
+
 /// Haptic feedback types.
-enum HapticFeedbackType {
+enum BouncyHapticFeedbackType {
   /// Light impact feedback.
   light,
 

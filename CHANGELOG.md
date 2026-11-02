@@ -9,6 +9,14 @@
 - `BouncyButtonFeedback.minLoadingDuration`, so a very fast action doesn't flash the spinner.
 - `BouncyButtonFeedback.loadingText`, shown beside the spinner and read by screen readers.
 - `BouncyButton.tooltip`.
+- A destructive tone: `BouncyButtonStyle.tone` with `BouncyButtonTone.destructive`, and a `BouncyButtonStyle.destructive` preset. It uses the theme's error colors with every fill.
+- `BouncyButtonStyle.minTapTarget`, which enlarges the tap area of a small button without changing how it looks.
+- `BouncyHapticFeedbackType` and `BouncyGradientExtension`, prefixed names that can't clash with other packages.
+
+### Deprecated
+
+- `HapticFeedbackType`, renamed `BouncyHapticFeedbackType`. The old name still works.
+- `GradientExtension`, renamed `BouncyGradientExtension`. Implicit calls such as `gradient.scaleLightness(0.5)` are unaffected.
 
 ### Changed
 

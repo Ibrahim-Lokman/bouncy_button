@@ -490,6 +490,17 @@ class _BouncyButtonState extends State<BouncyButton>
     return style.disabledGradient ?? style.gradient?.scaleLightness(0.6);
   }
 
+  bool _destructive(BouncyButtonStyle style) =>
+      style.tone == BouncyButtonTone.destructive;
+
+  /// The main color: primary, or error for a destructive button.
+  Color _mainColor(ColorScheme scheme, BouncyButtonStyle style) =>
+      _destructive(style) ? scheme.error : scheme.primary;
+
+  /// The softer container color used by tonal buttons.
+  Color _containerColor(ColorScheme scheme, BouncyButtonStyle style) =>
+      _destructive(style) ? scheme.errorContainer : scheme.secondaryContainer;
+
   Color _faceColor(BuildContext context, BouncyButtonStyle style) {
     final scheme = Theme.of(context).colorScheme;
     switch (style.fill) {
@@ -499,7 +510,7 @@ class _BouncyButtonState extends State<BouncyButton>
         }
         return style.backgroundColor ??
             style.hslColor?.toColor() ??
-            scheme.primary;
+            _mainColor(scheme, style);
       case BouncyButtonFill.tonal:
         if (!_isEnabled) {
           // Opaque, so the depth behind it doesn't show through.
@@ -508,7 +519,7 @@ class _BouncyButtonState extends State<BouncyButton>
         }
         return style.backgroundColor ??
             style.hslColor?.toColor() ??
-            scheme.secondaryContainer;
+            _containerColor(scheme, style);
       case BouncyButtonFill.outlined:
         return scheme.surface;
       case BouncyButtonFill.ghost:
@@ -534,7 +545,9 @@ class _BouncyButtonState extends State<BouncyButton>
     if (!_isEnabled) {
       return style.disabledColor ?? scheme.onSurface.withAlpha(97);
     }
-    return style.backgroundColor ?? style.hslColor?.toColor() ?? scheme.primary;
+    return style.backgroundColor ??
+        style.hslColor?.toColor() ??
+        _mainColor(scheme, style);
   }
 
   bool _usesAccent(BouncyButtonStyle style) =>
@@ -572,8 +585,14 @@ class _BouncyButtonState extends State<BouncyButton>
     if (base == scheme.primary) {
       return scheme.onPrimary;
     }
+    if (base == scheme.error) {
+      return scheme.onError;
+    }
     if (base == scheme.secondaryContainer) {
       return scheme.onSecondaryContainer;
+    }
+    if (base == scheme.errorContainer) {
+      return scheme.onErrorContainer;
     }
     if (_isGlass(style)) {
       if (!_isEnabled) {
@@ -581,7 +600,7 @@ class _BouncyButtonState extends State<BouncyButton>
       }
       // Judged against the opaque tint, as the backdrop is unknown.
       return style.backgroundColor == null
-          ? scheme.onSurface
+          ? (_destructive(style) ? scheme.error : scheme.onSurface)
           : ThemeData.estimateBrightnessForColor(style.backgroundColor!) ==
                   Brightness.dark
               ? Colors.white
@@ -609,7 +628,9 @@ class _BouncyButtonState extends State<BouncyButton>
     final scheme = Theme.of(context).colorScheme;
     // Dark themes use a pastel primary color, which turns neon when only its
     // HSL lightness is lowered. Tonal container colors do the same.
-    if (base == scheme.primary || style.fill == BouncyButtonFill.tonal) {
+    if (base == scheme.primary ||
+        base == scheme.error ||
+        style.fill == BouncyButtonFill.tonal) {
       return Color.lerp(
         base,
         Colors.black,
@@ -634,7 +655,9 @@ class _BouncyButtonState extends State<BouncyButton>
     if (!_isEnabled) {
       return scheme.onSurface.withAlpha(31);
     }
-    return style.backgroundColor ?? style.hslColor?.toColor() ?? scheme.outline;
+    return style.backgroundColor ??
+        style.hslColor?.toColor() ??
+        (_destructive(style) ? scheme.error : scheme.outline);
   }
 
   BoxDecoration _faceDecoration(
@@ -1051,6 +1074,18 @@ class _BouncyButtonState extends State<BouncyButton>
         transform: style.transform!,
         alignment: style.transformAlignment,
         child: content,
+      );
+    }
+
+    final minTapTarget = style.minTapTarget;
+    if (minTapTarget != null) {
+      // Inside the gesture detector, so the extra space also takes taps.
+      content = ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: minTapTarget,
+          minHeight: minTapTarget,
+        ),
+        child: Center(widthFactor: 1, heightFactor: 1, child: content),
       );
     }
 

@@ -206,7 +206,7 @@ class _ProductCard extends StatelessWidget {
                   child: BouncyPressable(
                     onTap: onFavorite,
                     scaleFactor: 0.8,
-                    haptic: HapticFeedbackType.selection,
+                    haptic: BouncyHapticFeedbackType.selection,
                     semanticLabel: favoriteLabel,
                     focusColor: theme.colorScheme.primary,
                     focusBorderRadius:
