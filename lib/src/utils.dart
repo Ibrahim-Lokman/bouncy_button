@@ -90,6 +90,22 @@ class BouncyButtonColors {
     );
   }
 
+  /// Darkens [color] by lowering its HSL lightness by [amount], from 0 to 1.
+  static Color darken(Color color, [double amount = 0.12]) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withLightness((hsl.lightness - amount).clamp(0.0, 1.0))
+        .toColor();
+  }
+
+  /// Lightens [color] by raising its HSL lightness by [amount], from 0 to 1.
+  static Color lighten(Color color, [double amount = 0.12]) {
+    final hsl = HSLColor.fromColor(color);
+    return hsl
+        .withLightness((hsl.lightness + amount).clamp(0.0, 1.0))
+        .toColor();
+  }
+
   /// Creates a complementary color.
   static Color complementary(Color color) {
     final hsl = HSLColor.fromColor(color);

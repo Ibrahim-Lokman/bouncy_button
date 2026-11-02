@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/widgets.dart';
+
+import 'enums.dart';
 // ============================================================================
 // lib/src/styles.dart
 // ============================================================================
@@ -37,7 +39,78 @@ class BouncyButtonStyle {
     this.transformAlignment,
     this.decoration,
     this.shadowDecoration,
+    this.fill = BouncyButtonFill.filled,
+    this.textStyle,
+    this.iconSize,
   });
+
+  /// A light depth shade, for [shadowDarkness].
+  static const double shadowLight = 0.12;
+
+  /// A dark depth shade, for [shadowDarkness]. This is the default.
+  static const double shadowDark = 0.3;
+
+  /// Creates a style from a few common values.
+  ///
+  /// ```dart
+  /// BouncyButton(
+  ///   onPressed: () {},
+  ///   style: BouncyButtonStyle.simple(color: Colors.teal, width: 200),
+  ///   child: const Text('Continue'),
+  /// )
+  /// ```
+  static BouncyButtonStyle simple({
+    Color? color,
+    Color? foregroundColor,
+    double? width,
+    double height = 48,
+    double borderRadius = 12,
+    double depth = 6,
+    double shadowDarkness = shadowLight,
+  }) {
+    return BouncyButtonStyle(
+      backgroundColor: color,
+      foregroundColor: foregroundColor,
+      width: width,
+      height: height,
+      elevation: depth,
+      borderRadius: BorderRadius.all(Radius.circular(borderRadius)),
+      shadowDarkness: shadowDarkness,
+    );
+  }
+
+  /// Returns the style for a preset [size], scaling height, depth, padding,
+  /// corners, and text together.
+  ///
+  /// Combine it with other options using [copyWith].
+  static BouncyButtonStyle fromSize(BouncyButtonSize size) {
+    return switch (size) {
+      BouncyButtonSize.small => const BouncyButtonStyle(
+          height: 44,
+          elevation: 4,
+          borderRadius: BorderRadius.all(Radius.circular(10)),
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          textStyle: TextStyle(fontSize: 14),
+          iconSize: 18,
+        ),
+      BouncyButtonSize.medium => const BouncyButtonStyle(
+          height: 48,
+          elevation: 6,
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          textStyle: TextStyle(fontSize: 16),
+          iconSize: 20,
+        ),
+      BouncyButtonSize.large => const BouncyButtonStyle(
+          height: 56,
+          elevation: 8,
+          borderRadius: BorderRadius.all(Radius.circular(14)),
+          padding: EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+          textStyle: TextStyle(fontSize: 18),
+          iconSize: 24,
+        ),
+    };
+  }
 
   /// The minimum height of the button face, excluding [elevation].
   ///
@@ -126,6 +199,21 @@ class BouncyButtonStyle {
   /// Decoration for the shadow/depth layer (advanced customization).
   final BoxDecoration? shadowDecoration;
 
+  /// How the face is filled.
+  ///
+  /// For [BouncyButtonFill.outlined] and [BouncyButtonFill.ghost],
+  /// [backgroundColor] sets the accent color of the text and border, because
+  /// the face itself is the surface color or clear. A ghost button has no
+  /// depth, whatever its [elevation].
+  final BouncyButtonFill fill;
+
+  /// The default text style, merged over the theme's. A style set directly on
+  /// the child takes precedence.
+  final TextStyle? textStyle;
+
+  /// The default icon size.
+  final double? iconSize;
+
   /// Creates a copy with modified fields.
   BouncyButtonStyle copyWith({
     double? height,
@@ -153,6 +241,9 @@ class BouncyButtonStyle {
     AlignmentGeometry? transformAlignment,
     BoxDecoration? decoration,
     BoxDecoration? shadowDecoration,
+    BouncyButtonFill? fill,
+    TextStyle? textStyle,
+    double? iconSize,
   }) {
     return BouncyButtonStyle(
       height: height ?? this.height,
@@ -180,6 +271,9 @@ class BouncyButtonStyle {
       transformAlignment: transformAlignment ?? this.transformAlignment,
       decoration: decoration ?? this.decoration,
       shadowDecoration: shadowDecoration ?? this.shadowDecoration,
+      fill: fill ?? this.fill,
+      textStyle: textStyle ?? this.textStyle,
+      iconSize: iconSize ?? this.iconSize,
     );
   }
 
@@ -213,7 +307,10 @@ class BouncyButtonStyle {
         other.transform == transform &&
         other.transformAlignment == transformAlignment &&
         other.decoration == decoration &&
-        other.shadowDecoration == shadowDecoration;
+        other.shadowDecoration == shadowDecoration &&
+        other.fill == fill &&
+        other.textStyle == textStyle &&
+        other.iconSize == iconSize;
   }
 
   @override
@@ -243,6 +340,9 @@ class BouncyButtonStyle {
         transformAlignment,
         decoration,
         shadowDecoration,
+        fill,
+        textStyle,
+        iconSize,
       ]);
 
   /// Primary button style with standard elevation and padding.
@@ -279,6 +379,33 @@ class BouncyButtonStyle {
     shadowDarkness: 0.3,
     borderRadius: BorderRadius.all(Radius.circular(24)),
     padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+  );
+
+  /// Tonal style: a softer face for secondary actions.
+  static const BouncyButtonStyle tonal = BouncyButtonStyle(
+    height: 48,
+    elevation: 6,
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    fill: BouncyButtonFill.tonal,
+  );
+
+  /// Outlined style: a surface face with a colored border and text.
+  static const BouncyButtonStyle outlined = BouncyButtonStyle(
+    height: 48,
+    elevation: 4,
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    fill: BouncyButtonFill.outlined,
+  );
+
+  /// Ghost style: colored text with no face or depth.
+  static const BouncyButtonStyle ghost = BouncyButtonStyle(
+    height: 48,
+    elevation: 0,
+    borderRadius: BorderRadius.all(Radius.circular(12)),
+    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+    fill: BouncyButtonFill.ghost,
   );
 
   /// Circular button style for icon buttons.

@@ -41,6 +41,14 @@
 - `BouncyButton.onPressedAsync`, which shows a loading state until the returned future completes, then success or an error. The button ignores presses meanwhile, so a form or payment can't be sent twice. Errors go to `onError`, or to `FlutterError.reportError`, and are never silently dropped.
 - `BouncyButton.isLoading`, for loading managed outside the button.
 - `BouncyButtonFeedback` to customize loading, success, and error, including the labels screen readers announce. Set it app-wide with `BouncyButtonTheme.defaultFeedback`.
+- `BouncyButton.leading`, `trailing`, and `gap`, for icons beside the label.
+- `BouncyButtonStyle.fill` with `BouncyButtonFill.filled`, `tonal`, `outlined`, and `ghost`, plus matching `tonal`, `outlined`, and `ghost` presets. Text meets the 4.5:1 contrast minimum in light and dark themes.
+- `BouncyButtonStyle.fromSize` with `BouncyButtonSize.small`, `medium`, and `large`, which scale height, depth, padding, and text together. Every size is at least 48 pixels tall.
+- `BouncyButtonStyle.textStyle` and `iconSize`.
+- `BouncyButtonStyle.simple`, for quick setup from a color and size, and the `shadowLight` and `shadowDark` constants.
+- `BouncyButtonColors.darken` and `lighten`.
+- `BouncyButtonScope`, which themes buttons without the Material `Theme`, for apps using `package:material_ui`.
+- `BouncyButtonTheme` value equality.
 - `BouncyButton.tertiary`, using `BouncyButtonTheme.tertiaryStyle`.
 - `BouncyButton.onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`.
 - `BouncyButtonStyle.foregroundColor`.

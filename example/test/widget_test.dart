@@ -403,6 +403,22 @@ void main() {
     });
   });
 
+  testWidgets('playground code follows the chosen options', (tester) async {
+    await _pumpApp(tester, size: const Size(400, 1600));
+    await _openTab(tester, 'Playground');
+    final scrollable = find.byType(Scrollable).hitTestable().first;
+    await tester.scrollUntilVisible(find.text('outlined'), 200,
+        scrollable: scrollable);
+    await tester.tap(find.text('outlined'));
+    await tester.tap(find.text('Leading icon'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byType(SelectableText), 200,
+        scrollable: scrollable);
+    final code = tester.widget<SelectableText>(find.byType(SelectableText));
+    expect(code.data, contains('fill: BouncyButtonFill.outlined'));
+    expect(code.data, contains('leading: const Icon(Icons.bolt)'));
+  });
+
   group('settings', () {
     testWidgets('right to left mirrors the app', (tester) async {
       final (settings, _) = await _pumpApp(tester);

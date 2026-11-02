@@ -29,6 +29,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _animationTypes(),
         _animationPresets(),
         _stylePresets(),
+        _fills(),
+        _sizes(),
+        _icons(),
         _colors(),
         _sizing(),
         _states(),
@@ -138,6 +141,90 @@ class _GalleryScreenState extends State<GalleryScreen> {
           semanticLabel: 'Circle style',
           style: BouncyButtonStyle.circle,
           child: const Icon(Icons.add),
+        ),
+      ],
+    );
+  }
+
+  Widget _fills() {
+    return DemoSection(
+      title: 'Fills',
+      subtitle: 'From most to least prominent, so secondary actions do not '
+          'compete with the main one.',
+      children: [
+        for (final fill in BouncyButtonFill.values)
+          BouncyButton(
+            onPressed: _log('Fill ${fill.name}'),
+            style: BouncyButtonStyle.fromSize(BouncyButtonSize.medium)
+                .copyWith(fill: fill),
+            child: Text(fill.name),
+          ),
+        BouncyButton(
+          onPressed: _log('Outlined teal'),
+          style: BouncyButtonStyle.outlined.copyWith(
+            backgroundColor: Colors.teal.shade700,
+          ),
+          child: const Text('outlined, custom color'),
+        ),
+        for (final fill in BouncyButtonFill.values)
+          BouncyButton(
+            onPressed: null,
+            style: BouncyButtonStyle(fill: fill, height: 48, elevation: 4),
+            child: Text('${fill.name} disabled'),
+          ),
+      ],
+    );
+  }
+
+  Widget _sizes() {
+    return DemoSection(
+      title: 'Sizes',
+      subtitle: 'BouncyButtonStyle.fromSize scales height, depth, padding, '
+          'and text together. Every size is at least 48 tall.',
+      children: [
+        for (final size in BouncyButtonSize.values)
+          BouncyButton(
+            onPressed: _log('Size ${size.name}'),
+            style: BouncyButtonStyle.fromSize(size),
+            leading: const Icon(Icons.bolt),
+            child: Text(size.name),
+          ),
+        BouncyButton(
+          onPressed: _log('simple'),
+          style: BouncyButtonStyle.simple(
+            color: Colors.deepOrange.shade800,
+            width: 180,
+          ),
+          child: const Text('BouncyButtonStyle.simple'),
+        ),
+      ],
+    );
+  }
+
+  Widget _icons() {
+    return DemoSection(
+      title: 'Icons',
+      subtitle: 'leading and trailing, which swap sides in right-to-left '
+          'layouts.',
+      children: [
+        BouncyButton(
+          onPressed: _log('Leading'),
+          leading: const Icon(Icons.add_shopping_cart),
+          child: const Text('Add to cart'),
+        ),
+        BouncyButton(
+          onPressed: _log('Trailing'),
+          style: BouncyButtonStyle.tonal,
+          trailing: const Icon(Icons.arrow_forward),
+          child: const Text('Continue'),
+        ),
+        BouncyButton(
+          onPressed: _log('Both'),
+          style: BouncyButtonStyle.outlined,
+          leading: const Icon(Icons.download),
+          trailing: const Icon(Icons.expand_more),
+          gap: 12,
+          child: const Text('gap: 12'),
         ),
       ],
     );

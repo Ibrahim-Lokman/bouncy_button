@@ -13,6 +13,7 @@ export 'src/feedback.dart';
 
 // Export theme
 export 'src/theme.dart';
+export 'src/scope.dart';
 
 // Export utilities
 export 'src/utils.dart';

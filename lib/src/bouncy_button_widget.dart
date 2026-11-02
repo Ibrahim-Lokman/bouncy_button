@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'enums.dart';
 import 'feedback.dart';
 import 'styles.dart';
 import 'animations.dart';
@@ -56,6 +57,9 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
+    this.leading,
+    this.trailing,
+    this.gap = 8,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -87,6 +91,9 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
+    this.leading,
+    this.trailing,
+    this.gap = 8,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -118,6 +125,9 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
+    this.leading,
+    this.trailing,
+    this.gap = 8,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -149,6 +159,9 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
+    this.leading,
+    this.trailing,
+    this.gap = 8,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -256,6 +269,17 @@ class BouncyButton extends StatefulWidget {
   /// button content. The builder receives the current build context
   /// and a boolean indicating whether the button is pressed.
   final Widget Function(BuildContext, bool isPressed)? builder;
+
+  /// A widget before [child], typically an [Icon]. Placed on the right in
+  /// right-to-left layouts. Not used with [builder].
+  final Widget? leading;
+
+  /// A widget after [child], typically an [Icon]. Placed on the left in
+  /// right-to-left layouts. Not used with [builder].
+  final Widget? trailing;
+
+  /// The space between [leading], [child], and [trailing].
+  final double gap;
 
   @override
   State<BouncyButton> createState() => _BouncyButtonState();
@@ -378,6 +402,13 @@ class _BouncyButtonState extends State<BouncyButton>
   }
 
   BouncyButtonStyle get _style {
+    final style = _unresolvedStyle;
+    return style.fill == BouncyButtonFill.ghost && style.elevation != 0
+        ? style.copyWith(elevation: 0)
+        : style;
+  }
+
+  BouncyButtonStyle get _unresolvedStyle {
     final theme = BouncyButtonTheme.of(context);
     return widget.style ??
         switch (widget._variant) {
@@ -412,13 +443,41 @@ class _BouncyButtonState extends State<BouncyButton>
   }
 
   Color _faceColor(BuildContext context, BouncyButtonStyle style) {
-    if (!_isEnabled) {
-      return style.disabledColor ?? Colors.grey;
+    final scheme = Theme.of(context).colorScheme;
+    switch (style.fill) {
+      case BouncyButtonFill.filled:
+        if (!_isEnabled) {
+          return style.disabledColor ?? Colors.grey;
+        }
+        return style.backgroundColor ??
+            style.hslColor?.toColor() ??
+            scheme.primary;
+      case BouncyButtonFill.tonal:
+        if (!_isEnabled) {
+          return style.disabledColor ?? scheme.onSurface.withAlpha(31);
+        }
+        return style.backgroundColor ??
+            style.hslColor?.toColor() ??
+            scheme.secondaryContainer;
+      case BouncyButtonFill.outlined:
+        return scheme.surface;
+      case BouncyButtonFill.ghost:
+        return Colors.transparent;
     }
-    return style.backgroundColor ??
-        style.hslColor?.toColor() ??
-        Theme.of(context).colorScheme.primary;
   }
+
+  /// The text and border color of outlined and ghost buttons.
+  Color _accentColor(BuildContext context, BouncyButtonStyle style) {
+    final scheme = Theme.of(context).colorScheme;
+    if (!_isEnabled) {
+      return style.disabledColor ?? scheme.onSurface.withAlpha(97);
+    }
+    return style.backgroundColor ?? style.hslColor?.toColor() ?? scheme.primary;
+  }
+
+  bool _usesAccent(BouncyButtonStyle style) =>
+      style.fill == BouncyButtonFill.outlined ||
+      style.fill == BouncyButtonFill.ghost;
 
   /// The color that most represents the button face, or null if unknown.
   Color? _faceBaseColor(BuildContext context, BouncyButtonStyle style) {
@@ -440,6 +499,9 @@ class _BouncyButtonState extends State<BouncyButton>
     if (style.foregroundColor != null) {
       return style.foregroundColor;
     }
+    if (_usesAccent(style) && style.decoration == null) {
+      return _accentColor(context, style);
+    }
     final base = _faceBaseColor(context, style);
     if (base == null) {
       return null;
@@ -447,6 +509,9 @@ class _BouncyButtonState extends State<BouncyButton>
     final scheme = Theme.of(context).colorScheme;
     if (base == scheme.primary) {
       return scheme.onPrimary;
+    }
+    if (base == scheme.secondaryContainer) {
+      return scheme.onSecondaryContainer;
     }
     return ThemeData.estimateBrightnessForColor(base) == Brightness.dark
         ? Colors.white
@@ -457,10 +522,14 @@ class _BouncyButtonState extends State<BouncyButton>
     if (style.shadowColor != null) {
       return style.shadowColor!;
     }
+    if (_usesAccent(style) && style.decoration == null) {
+      return _outlineColor(context, style);
+    }
     final base = _faceBaseColor(context, style) ?? _faceColor(context, style);
+    final scheme = Theme.of(context).colorScheme;
     // Dark themes use a pastel primary color, which turns neon when only its
-    // HSL lightness is lowered.
-    if (base == Theme.of(context).colorScheme.primary) {
+    // HSL lightness is lowered. Tonal container colors do the same.
+    if (base == scheme.primary || style.fill == BouncyButtonFill.tonal) {
       return Color.lerp(
         base,
         Colors.black,
@@ -479,17 +548,30 @@ class _BouncyButtonState extends State<BouncyButton>
         : style.borderRadius ?? BorderRadius.circular(12);
   }
 
+  /// The border and depth color of an outlined button.
+  Color _outlineColor(BuildContext context, BouncyButtonStyle style) {
+    final scheme = Theme.of(context).colorScheme;
+    if (!_isEnabled) {
+      return scheme.onSurface.withAlpha(31);
+    }
+    return style.backgroundColor ?? style.hslColor?.toColor() ?? scheme.outline;
+  }
+
   BoxDecoration _faceDecoration(BuildContext context, BouncyButtonStyle style) {
     if (style.decoration != null) {
       return style.decoration!;
     }
-    final gradient = _faceGradient(style);
+    final gradient = _usesAccent(style) ? null : _faceGradient(style);
+    final outlined = style.fill == BouncyButtonFill.outlined;
     return BoxDecoration(
       gradient: gradient,
       color: gradient == null ? _faceColor(context, style) : null,
       borderRadius: _borderRadius(style),
       shape: style.shape,
-      border: style.border,
+      border: style.border ??
+          (outlined
+              ? Border.all(color: _outlineColor(context, style), width: 2)
+              : null),
       boxShadow:
           style.shadows ?? (style.shadow != null ? [style.shadow!] : null),
     );
@@ -516,10 +598,15 @@ class _BouncyButtonState extends State<BouncyButton>
   ) {
     final fallback = foreground ?? Colors.black;
     final shape = style.decoration?.shape ?? style.shape;
+    // A ghost button has no depth to push in, so a tint shows the press.
+    final ghostPressed =
+        style.fill == BouncyButtonFill.ghost && press.isPressed;
     return BoxDecoration(
-      color: press.isHovered
-          ? interaction.hoverColor ?? fallback.withAlpha(20)
-          : null,
+      color: ghostPressed
+          ? interaction.highlightColor ?? fallback.withAlpha(36)
+          : press.isHovered
+              ? interaction.hoverColor ?? fallback.withAlpha(20)
+              : null,
       border: press.isFocused
           ? Border.all(color: interaction.focusColor ?? fallback, width: 2)
           : null,
@@ -545,7 +632,7 @@ class _BouncyButtonState extends State<BouncyButton>
               alignment: style.alignment ?? Alignment.center,
               widthFactor: 1,
               heightFactor: 1,
-              child: widget.child,
+              child: _withIcons(),
             ),
           );
     final status = _status;
@@ -569,6 +656,33 @@ class _BouncyButtonState extends State<BouncyButton>
             ),
           ),
       ],
+    );
+  }
+
+  /// Places [BouncyButton.leading] and [BouncyButton.trailing] around the
+  /// child.
+  Widget _withIcons() {
+    final leading = widget.leading;
+    final trailing = widget.trailing;
+    if (leading == null && trailing == null) {
+      return widget.child;
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // A long label wraps when there is a width limit. Without one, as in
+        // a Row, a Flexible child would throw.
+        final child = constraints.hasBoundedWidth
+            ? Flexible(child: widget.child)
+            : widget.child;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (leading != null) ...[leading, SizedBox(width: widget.gap)],
+            child,
+            if (trailing != null) ...[SizedBox(width: widget.gap), trailing],
+          ],
+        );
+      },
     );
   }
 
@@ -641,11 +755,13 @@ class _BouncyButtonState extends State<BouncyButton>
   ) {
     final foreground = _foregroundColor(context, style);
     Widget content = _buildContent(context, style, press);
-    if (foreground != null) {
+    if (foreground != null ||
+        style.textStyle != null ||
+        style.iconSize != null) {
       content = IconTheme.merge(
-        data: IconThemeData(color: foreground),
+        data: IconThemeData(color: foreground, size: style.iconSize),
         child: DefaultTextStyle.merge(
-          style: TextStyle(color: foreground),
+          style: TextStyle(color: foreground).merge(style.textStyle),
           child: content,
         ),
       );

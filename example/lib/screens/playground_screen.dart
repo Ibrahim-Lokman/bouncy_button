@@ -29,6 +29,8 @@ class PlaygroundScreen extends StatefulWidget {
 
 class _PlaygroundScreenState extends State<PlaygroundScreen> {
   BouncyButtonAnimationType _type = BouncyButtonAnimationType.depth;
+  BouncyButtonFill _fill = BouncyButtonFill.filled;
+  bool _icon = false;
   _NamedColor _color = _colors.first;
   double _height = 56;
   double _elevation = 8;
@@ -45,7 +47,8 @@ BouncyButton(
     backgroundColor: const ${_color.code},
     borderRadius: BorderRadius.circular(${_radius.round()}),
     shadowDarkness: ${_shadowDarkness.toStringAsFixed(2)},
-  ),
+    fill: BouncyButtonFill.${_fill.name},
+  ),${_icon ? '\n  leading: const Icon(Icons.bolt),' : ''}
   animation: const BouncyButtonAnimation(
     type: BouncyButtonAnimationType.${_type.name},
     duration: Duration(milliseconds: ${_duration.round()}),
@@ -104,7 +107,9 @@ BouncyButton(
                 backgroundColor: _color.color,
                 borderRadius: BorderRadius.circular(_radius),
                 shadowDarkness: _shadowDarkness,
+                fill: _fill,
               ),
+              leading: _icon ? const Icon(Icons.bolt) : null,
               animation: BouncyButtonAnimation(
                 type: _type,
                 duration: Duration(milliseconds: _duration.round()),
@@ -163,6 +168,27 @@ BouncyButton(
                 onSelected: (_) => setState(() => _type = type),
               ),
           ],
+        ),
+        const SizedBox(height: 16),
+        Text('Fill', style: textTheme.titleSmall),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final fill in BouncyButtonFill.values)
+              ChoiceChip(
+                label: Text(fill.name),
+                selected: _fill == fill,
+                onSelected: (_) => setState(() => _fill = fill),
+              ),
+          ],
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Leading icon'),
+          value: _icon,
+          onChanged: (value) => setState(() => _icon = value),
         ),
         const SizedBox(height: 16),
         Text('Color', style: textTheme.titleSmall),

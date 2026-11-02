@@ -270,6 +270,31 @@ final triadic = BouncyButtonColors.triadic(Colors.blue);
 final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 ```
 
+### Icons, Sizes, and Fills
+
+```dart
+BouncyButton(
+  onPressed: () {},
+  style: BouncyButtonStyle.fromSize(BouncyButtonSize.large),
+  leading: const Icon(Icons.add_shopping_cart),
+  child: const Text('Add to cart'),
+)
+```
+
+- **Icons:** `leading` and `trailing` sit either side of the label, `gap` apart, and swap sides in right-to-left layouts.
+- **Sizes:** `BouncyButtonStyle.fromSize` scales height, depth, padding, and text together. `small` is still 48 pixels tall in total, the minimum tap target size.
+- **Fills:** `filled`, `tonal`, `outlined`, and `ghost`, from most to least prominent. Use the `BouncyButtonStyle.tonal`, `outlined`, and `ghost` presets, or set `fill` yourself. For outlined and ghost buttons, `backgroundColor` sets the text and border color.
+
+For quick setup, `BouncyButtonStyle.simple` takes the most common values:
+
+```dart
+BouncyButtonStyle.simple(
+  color: Colors.teal,
+  width: 200,
+  shadowDarkness: BouncyButtonStyle.shadowDark,
+)
+```
+
 ### Async Actions
 
 `onPressedAsync` shows a spinner until the returned future completes, then a check mark, or an error icon with a shake if it throws. The button ignores presses until it's ready again, so a form or payment can't be sent twice:
@@ -329,6 +354,21 @@ Inside the scope, a press that starts while another button is held is ignored. K
 ### Tap Callbacks
 
 Both widgets accept `onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`. A button with only `onLongPress` stays enabled.
+
+### Apps Using material_ui
+
+Flutter is moving Material into the separate `material_ui` package, whose `Theme` is a different class from the SDK's. A `BouncyButtonTheme` in a `material_ui` theme's extensions won't reach the buttons. Use `BouncyButtonScope` instead:
+
+```dart
+BouncyButtonScope(
+  theme: const BouncyButtonTheme(
+    primaryStyle: BouncyButtonStyle(backgroundColor: Colors.teal),
+  ),
+  child: child,
+)
+```
+
+Default colors still come from the SDK's `Theme`. See Flutter's [migration guide](https://docs.flutter.dev/release/breaking-changes/material-ui-and-cupertino-ui) for passing your theme to packages that haven't migrated.
 
 ## Customization Options
 

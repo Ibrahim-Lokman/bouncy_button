@@ -4,6 +4,7 @@ import 'styles.dart';
 import 'animations.dart';
 import 'interactions.dart';
 import 'feedback.dart';
+import 'scope.dart';
 // ============================================================================
 // lib/src/theme.dart
 // ============================================================================
@@ -73,8 +74,34 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
     return t < 0.5 ? this : other;
   }
 
-  /// Gets the button theme from the current context.
+  /// Gets the button theme for [context]: the nearest [BouncyButtonScope],
+  /// otherwise the extension in the Material [Theme].
   static BouncyButtonTheme? of(BuildContext context) {
-    return Theme.of(context).extension<BouncyButtonTheme>();
+    return BouncyButtonScope.maybeOf(context) ??
+        Theme.of(context).extension<BouncyButtonTheme>();
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is BouncyButtonTheme &&
+        other.primaryStyle == primaryStyle &&
+        other.secondaryStyle == secondaryStyle &&
+        other.tertiaryStyle == tertiaryStyle &&
+        other.defaultAnimation == defaultAnimation &&
+        other.defaultInteraction == defaultInteraction &&
+        other.defaultFeedback == defaultFeedback;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        primaryStyle,
+        secondaryStyle,
+        tertiaryStyle,
+        defaultAnimation,
+        defaultInteraction,
+        defaultFeedback,
+      );
 }
