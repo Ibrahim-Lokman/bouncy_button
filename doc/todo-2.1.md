@@ -97,7 +97,7 @@ These change how existing apps look, so they wait for a major version:
 
 ## Release checklist
 
-- [x] Bump `pubspec.yaml` to 2.1.0. The `CHANGELOG.md` entry still needs its date.
+- [x] Bump `pubspec.yaml` to 2.1.0, and add a dated `CHANGELOG.md` entry.
 - [x] `flutter analyze` and `flutter test` pass, in the package and `example/`, on Flutter 3.27, current, and latest stable.
 - [ ] The example app runs on a device, and each new feature has been checked by eye. Checked as rendered screenshots, not yet on a device.
 - [x] `flutter pub publish --dry-run` shows 0 warnings.
