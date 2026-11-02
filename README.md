@@ -1,385 +1,131 @@
 # Bouncy Button
 
-A highly customizable Flutter button with a 3D press effect, async loading states, spring physics, and full accessibility, plus `BouncyPressable` to give any widget the same press.
+[![pub package](https://img.shields.io/pub/v/bouncy_button.svg)](https://pub.dev/packages/bouncy_button)
+[![CI](https://github.com/Ibrahim-Lokman/bouncy_button/actions/workflows/ci.yml/badge.svg)](https://github.com/Ibrahim-Lokman/bouncy_button/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-## Features
+**Buttons people want to press.** Bouncy Button gives your Flutter app a tactile 3D button that sinks when tapped and springs back when released. It also handles the hard parts of real buttons for you: loading states, accidental double taps, and accessibility.
 
-✨ **3D Depth Effect** - Realistic button press with customizable elevation  
-🎨 **Extensive Styling** - Gradients, shadows, borders, and custom decorations  
-🎭 **Multiple Animations** - Depth, scale, rotation, bounce, fade, and slide effects  
-📱 **Haptic Feedback** - Native platform haptic feedback support  
-🎯 **Gesture Support** - Tap and long press, with a visible press on even the quickest tap  
-♿ **Accessibility** - Screen reader support, keyboard activation, a focus ring, large text, and the system "reduce motion" setting  
-🎨 **Theme Integration** - App-wide styles through `BouncyButtonTheme`, with legible default colors in light and dark themes  
-🖥️ **Desktop and Web** - Hover highlight, mouse cursor, and keyboard navigation  
-🧩 **Any Widget** - `BouncyPressable` adds the press effect to cards, images, and list items  
-⏳ **Async Actions** - Loading, success, and error states, with double-submit protection  
-🌀 **Springs and Shape** - Interruptible spring motion, hover lift, and corners that morph on press  
-🎛️ **Sizes, Fills, and Groups** - Small to large sizes, filled to ghost fills, glass, icons, and connected button groups
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/gifs/gif_1.gif" alt="Bouncy buttons being pressed" width="300">
+  &nbsp;&nbsp;
+  <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/gifs/gif_2.gif" alt="Styled bouncy buttons" width="300">
+</p>
 
-## Installation
+## Why Bouncy Button
 
-Add this to your package's `pubspec.yaml` file:
+- **It feels real.** The button face sits on a darker layer, like a key on a keyboard, and sinks into it when pressed. Even the quickest tap shows the full press.
+- **It's safe for real actions.** Give it a function that saves or pays, and it shows a spinner, then a tick or an error. It ignores extra taps while it works, so nothing is sent twice.
+- **It works with what you already have.** Add the same press to any card or image, or add double-tap protection to the Material and Cupertino buttons you already use.
+- **It's accessible out of the box.** Screen readers, keyboards, large text, and the "reduce motion" setting all work with no extra code.
+- **It's light.** No dependencies beyond Flutter, and it runs on Android, iOS, web, macOS, Windows, and Linux.
+
+## Getting started
+
+Add the package:
 
 ```yaml
 dependencies:
   bouncy_button: ^2.1.0
 ```
 
-Then run:
-
-```bash
-flutter pub get
-```
-
-## Demo
-
-<div align="center">
-  <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/gifs/gif_1.gif" alt="Basic and Animated Button Demo" style="width: 100%; max-width: 400px;">
-  <br><br>
-  <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/gifs/gif_2.gif" alt="Styled and Interactive Button Demo" style="width: 100%; max-width: 400px;">
-</div>
-
-## Screenshots
-
-### Light Theme
-
-<img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss1.png" alt="Basic and Animated Buttons" width="300"> <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss2.png" alt="Styled and Icon Buttons" width="300">
-
-### Dark Theme
-
-<img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss3.png" alt="Animated and Styled Buttons" width="300"> <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss4.png" alt="Interactive and State Buttons" width="300">
-
-## Usage
-
-### Simple Usage
+Then use it like any button:
 
 ```dart
 import 'package:bouncy_button/bouncy_button.dart';
 
 BouncyButton(
-  onPressed: () {
-    print('Button pressed!');
-  },
-  child: Text('Click Me'),
+  onPressed: () => print('Pressed!'),
+  child: const Text('Press me'),
 )
 ```
 
-### Sizing
+With no style set, the button uses your app's theme colors and picks a readable text color, in both light and dark mode.
 
-A button sizes itself to its child, and fills its parent when the parent forces a width.
+## Features
 
-```dart
-// Fits the label
-BouncyButton(onPressed: () {}, child: Text('Fits')),
+- [The 3D press](#the-3d-press)
+- [A style for every action](#a-style-for-every-action)
+- [Loading, success, and error](#loading-success-and-error)
+- [No accidental double taps](#no-accidental-double-taps)
+- [Protect the buttons you already have](#protect-the-buttons-you-already-have)
+- [The bounce on any widget](#the-bounce-on-any-widget)
+- [Button groups](#button-groups)
+- [Motion that feels alive](#motion-that-feels-alive)
+- [Built for everyone](#built-for-everyone)
+- [Style your whole app at once](#style-your-whole-app-at-once)
+- [More control](#more-control)
 
-// Fills the available width
-BouncyButton(
-  onPressed: () {},
-  style: BouncyButtonStyle(width: double.infinity),
-  child: Text('Full width'),
-),
-```
+### The 3D press
 
-`height` is a minimum, so the button grows when its content needs more room, such as with large system text sizes.
-
-### Using Predefined Styles
-
-```dart
-// Primary style button
-BouncyButton.primary(
-  onPressed: () {},
-  child: Text('Primary Button'),
-)
-
-// Secondary style button
-BouncyButton.secondary(
-  onPressed: () {},
-  child: Text('Secondary Button'),
-)
-
-// Tertiary style button
-BouncyButton.tertiary(
-  onPressed: () {},
-  child: Text('Tertiary Button'),
-)
-```
-
-### Custom Styling
+Every button has two layers: the face you see, and a darker layer underneath that gives it depth. Pressing pushes the face down into that layer, and letting go lets it spring back up. You choose how deep it goes, its colors, and its shape.
 
 ```dart
 BouncyButton(
   onPressed: () {},
   style: BouncyButtonStyle(
-    height: 60,
-    elevation: 10,
-    backgroundColor: Colors.purple,
-    borderRadius: BorderRadius.circular(30),
-    shadowDarkness: 0.4,
+    backgroundColor: Colors.teal,
+    elevation: 10, // How deep the press goes
+    borderRadius: BorderRadius.circular(16),
   ),
-  child: Text('Custom Style'),
+  child: const Text('Continue'),
 )
 ```
 
-### With Gradient
+Besides sinking, a button can also shrink, tilt, bounce, fade, or slide as it's pressed. Set `animation: BouncyButtonAnimation(type: BouncyButtonAnimationType.scale)` to try one.
 
-```dart
-BouncyButton(
-  onPressed: () {},
-  style: BouncyButtonStyle(
-    gradient: LinearGradient(
-      colors: [Colors.blue, Colors.purple],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-    ),
-  ),
-  child: Text('Gradient Button'),
-)
-```
+### A style for every action
 
-### Different Animation Types
+Most screens have one main action and a few smaller ones. Bouncy Button has a style for each, so the most important button stands out:
 
-```dart
-// Scale animation
-BouncyButton(
-  onPressed: () {},
-  animation: BouncyButtonAnimation(
-    type: BouncyButtonAnimationType.scale,
-    scaleAmount: 0.9,
-  ),
-  child: Text('Scale Animation'),
-)
-
-// Springs past its resting position on release
-BouncyButton(
-  onPressed: () {},
-  animation: BouncyButtonAnimation.bouncy,
-  child: Text('Bounce Animation'),
-)
-```
-
-### With Haptic Feedback
-
-```dart
-BouncyButton(
-  onPressed: () {},
-  interaction: BouncyButtonInteraction(
-    enableHapticFeedback: true,
-    hapticFeedbackType: HapticFeedbackType.medium,
-  ),
-  child: Text('Haptic Feedback'),
-)
-```
-
-### Icon Button
-
-```dart
-BouncyButton(
-  onPressed: () {},
-  style: BouncyButtonStyle.circle.copyWith(
-    backgroundColor: Colors.red,
-    width: 56,
-    height: 56,
-  ),
-  child: Icon(Icons.favorite, color: Colors.white),
-)
-```
-
-### Disabled State
-
-```dart
-BouncyButton(
-  onPressed: null, // or enabled: false
-  style: BouncyButtonStyle(
-    disabledColor: Colors.grey,
-  ),
-  child: Text('Disabled Button'),
-)
-```
-
-## Advanced Usage
-
-### Custom Builder
-
-```dart
-BouncyButton(
-  onPressed: () {},
-  builder: (context, isPressed) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isPressed ? Icons.star : Icons.star_border,
-            color: isPressed ? Colors.yellow : Colors.white,
-          ),
-          SizedBox(width: 8),
-          Text('Custom Builder'),
-        ],
-      ),
-    );
-  },
-  child: Container(), // Child is ignored when builder is provided
-)
-```
-
-### Theme Integration
-
-```dart
-MaterialApp(
-  theme: ThemeData(
-    extensions: [
-      BouncyButtonTheme(
-        primaryStyle: BouncyButtonStyle(
-          backgroundColor: Colors.blue,
-          elevation: 8,
-        ),
-        defaultAnimation: BouncyButtonAnimation(
-          duration: Duration(milliseconds: 100),
-        ),
-      ),
-    ],
-  ),
-  home: MyHomePage(),
-)
-```
-
-| Theme field          | Used by                                                  |
-| -------------------- | -------------------------------------------------------- |
-| `primaryStyle`       | `BouncyButton` and `BouncyButton.primary` with no style  |
-| `secondaryStyle`     | `BouncyButton.secondary` with no style                   |
-| `tertiaryStyle`      | `BouncyButton.tertiary` with no style                    |
-| `defaultAnimation`   | Any button with no `animation`                           |
-| `defaultInteraction` | Any button with no `interaction`                         |
-
-A style passed directly to a button replaces the themed style entirely.
-
-### Color Utilities
-
-```dart
-// Create gradient from single color
-final gradient = BouncyButtonColors.gradientFromColor(
-  Colors.blue,
-  spread: 0.2,
-);
-
-// Get complementary color
-final complementary = BouncyButtonColors.complementary(Colors.blue);
-
-// Create color schemes
-final analogous = BouncyButtonColors.analogous(Colors.blue);
-final triadic = BouncyButtonColors.triadic(Colors.blue);
-final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
-```
-
-### Icons, Sizes, and Fills
-
-```dart
-BouncyButton(
-  onPressed: () {},
-  style: BouncyButtonStyle.fromSize(BouncyButtonSize.large),
-  leading: const Icon(Icons.add_shopping_cart),
-  child: const Text('Add to cart'),
-)
-```
-
-- **Icons:** `leading` and `trailing` sit either side of the label, `gap` apart, and swap sides in right-to-left layouts.
-- **Sizes:** `BouncyButtonStyle.fromSize` scales height, depth, padding, and text together. `small` is still 48 pixels tall in total, the minimum tap target size.
-- **Fills:** `filled`, `tonal`, `outlined`, and `ghost`, from most to least prominent. Use the `BouncyButtonStyle.tonal`, `outlined`, and `ghost` presets, or set `fill` yourself. For outlined and ghost buttons, `backgroundColor` sets the text and border color.
-
-For quick setup, `BouncyButtonStyle.simple` takes the most common values:
-
-```dart
-BouncyButtonStyle.simple(
-  color: Colors.teal,
-  width: 200,
-  shadowDarkness: BouncyButtonStyle.shadowDark,
-)
-```
-
-### Choosing a Style
-
-Show which action matters most through style, not size. Apple's [guidelines](https://developer.apple.com/design/human-interface-guidelines/buttons) also advise no more than one or two prominent buttons per screen.
-
-| Action | Style |
-| --- | --- |
-| The main action, such as Pay | `BouncyButtonStyle.primary` (filled) |
-| Secondary actions, such as Apply | `BouncyButtonStyle.tonal` |
-| Minor actions, such as Cancel | `BouncyButtonStyle.outlined` or `ghost` |
-| Deleting or removing something | `BouncyButtonStyle.destructive` |
-
-`BouncyButtonStyle.destructive` uses the theme's error colors, and works with any fill:
+| Use it for | Style | What it looks like |
+| --- | --- | --- |
+| The main action, such as **Pay** | `BouncyButtonStyle.primary` | Solid color |
+| Secondary actions, such as **Apply** | `BouncyButtonStyle.tonal` | Softer color |
+| Minor actions, such as **Cancel** | `BouncyButtonStyle.outlined` or `ghost` | Outline only, or text only |
+| Deleting something | `BouncyButtonStyle.destructive` | Your theme's error red |
 
 ```dart
 BouncyButton(
   onPressed: deleteAccount,
-  style: BouncyButtonStyle.destructive.copyWith(fill: BouncyButtonFill.outlined),
+  style: BouncyButtonStyle.destructive,
+  leading: const Icon(Icons.delete_outline),
   child: const Text('Delete account'),
 )
 ```
 
-`BouncyButton.secondary` and `.tertiary` are filled too, and differ from the primary button only in size. Prefer the fills above for new code.
+- **Sizes:** `BouncyButtonStyle.fromSize(BouncyButtonSize.small)`, `medium`, or `large` adjust height, depth, padding, and text together. Even the small size is easy to tap.
+- **Icons:** `leading` and `trailing` put an icon before or after the label, on the correct side for right-to-left languages.
+- **Quick setup:** `BouncyButtonStyle.simple(color: Colors.teal, width: 200)` takes just the values you need most.
+- **Combining:** mix styles with `copyWith`, for example `BouncyButtonStyle.destructive.copyWith(fill: BouncyButtonFill.outlined)` for a red outlined button.
 
-### Button Groups
+### Loading, success, and error
 
-`BouncyButtonGroup` is a row of connected buttons for choosing one option, or several with `multiSelect: true`:
-
-```dart
-BouncyButtonGroup<String>(
-  segments: const [
-    BouncyButtonSegment(value: 'day', label: Text('Day')),
-    BouncyButtonSegment(value: 'week', label: Text('Week')),
-    BouncyButtonSegment(value: 'month', label: Text('Month')),
-  ],
-  selected: {view},
-  onSelectionChanged: (selection) => setState(() => view = selection.first),
-)
-```
-
-Selected segments are filled and the rest tonal. Change them with `style` and `selectedStyle`. For icon-only segments, set `semanticLabel` so screen readers can name them.
-
-### Glass and Sound
-
-- **Glass:** `BouncyButtonStyle.glass` gives a translucent, blurred face over whatever is behind it. It has no depth, and turns solid when the system high contrast setting is on. Blurring is costly, so avoid it in long lists.
-- **Sound:** `BouncyButtonInteraction(enableSound: true)` plays the system click on each press. The platform may have no such sound, the device's sound settings can silence it, and web plays nothing. For a sound that plays everywhere, pass `onPressSound` and play your own with an audio package.
-
-### Async Actions
-
-`onPressedAsync` shows a spinner until the returned future completes, then a check mark, or an error icon with a shake if it throws. The button ignores presses until it's ready again, so a form or payment can't be sent twice:
+Saving, sending, or paying takes time. Use `onPressedAsync` instead of `onPressed`, and the button shows a spinner while your code runs. Then it shows a tick when it's done, or an error icon with a small shake if something went wrong. While it's busy, extra taps are ignored, so an order can't be placed twice.
 
 ```dart
 BouncyButton(
   onPressedAsync: () => api.placeOrder(cart),
-  onError: (error, stackTrace) => showError(error),
+  onError: (error, stackTrace) => showMessage('Payment failed'),
   child: const Text('Pay'),
 )
 ```
 
-Use either `onPressed` or `onPressedAsync`, not both. Customize the states with `feedback`:
+Adjust the details with `feedback`:
 
 ```dart
-BouncyButton(
-  onPressedAsync: save,
-  feedback: BouncyButtonFeedback(
-    successBuilder: (context) => const Text('Saved'),
-    resultDuration: const Duration(seconds: 2),
-    loadingLabel: 'Enregistrement', // Read by screen readers
-  ),
-  child: const Text('Save'),
-)
+feedback: const BouncyButtonFeedback(
+  loadingText: 'Paying…',                        // Shown next to the spinner
+  minLoadingDuration: Duration(milliseconds: 400), // No flicker on fast networks
+  resultDuration: Duration(seconds: 2),           // How long the tick stays
+),
 ```
 
-If loading is managed elsewhere, pass `isLoading: true` instead. Errors without an `onError` handler go to `FlutterError.reportError`, so they are never silently lost.
+The button keeps its size while the content changes, so nothing around it jumps. If your code throws and you haven't set `onError`, the error is reported to Flutter instead of disappearing silently. If you track loading yourself, pass `isLoading: true`.
 
-Two more `feedback` options:
+### No accidental double taps
 
-- `loadingText: 'Saving…'` shows text beside the spinner, which screen readers also read. The button keeps its size, so longer text is cut off.
-- `minLoadingDuration: Duration(milliseconds: 400)` keeps loading on screen for at least that long, so a very fast action doesn't flash the spinner.
-
-### Preventing Double Taps
-
-A quick double tap on a plain `onPressed` runs it twice, which can open the same page twice. Set `cooldown` to ignore presses for a while after the button is used:
+A fast double tap normally runs your code twice, which can open the same page twice. Set a `cooldown`, and the button ignores taps for that long after each use:
 
 ```dart
 BouncyButton(
@@ -389,11 +135,11 @@ BouncyButton(
 )
 ```
 
-For `onPressedAsync`, the cooldown starts once the button is ready again, after any success or error, and errors count too. `BouncyPressable` takes a `cooldown` as well.
+For `onPressedAsync`, the cooldown starts once the button is ready again.
 
-### Protecting Any Button
+### Protect the buttons you already have
 
-`BouncyAsyncBuilder` brings the same protection and states to buttons you already use, including Material, Cupertino, and your own:
+You don't have to change your design to get these protections. `BouncyAsyncBuilder` wraps the buttons you already use, from Material, Cupertino, or your own design system:
 
 ```dart
 BouncyAsyncBuilder(
@@ -407,167 +153,157 @@ BouncyAsyncBuilder(
 )
 ```
 
-While the action runs, the callback ignores presses, even two in the same frame. It stays non-null, so the button keeps its keyboard focus. Set `disableWhileBusy: true` to receive `null` instead, which makes most buttons look disabled but drops focus. It takes `cooldown`, `controller`, and `feedback` timings, and needs no Material code.
+Repeat taps are blocked instantly, even two in the same frame, and keyboard focus is kept. Use `status` to show progress your own way.
 
-### Controlling a Button from Code
+### The bounce on any widget
 
-```dart
-final controller = BouncyButtonController();
-
-BouncyButton(controller: controller, onPressedAsync: save, child: const Text('Save'))
-
-await controller.press(); // Runs the action with its press animation
-controller.reset();       // Back to idle, ignoring a late result
-controller.status;        // idle, loading, success, or error
-```
-
-The controller is a `ChangeNotifier`, so you can listen for status changes. It works with `BouncyAsyncBuilder` too.
-
-### Springs and Shape
-
-A spring makes the press respond to the finger: pressing again mid-release reverses smoothly from wherever the button is, keeping its speed. Below a damping ratio of 1, it bounces as it settles.
-
-```dart
-BouncyButton(
-  onPressed: () {},
-  animation: const BouncyButtonAnimation(spring: BouncyPressSpring.bouncy),
-  style: BouncyButtonStyle.pill.copyWith(
-    pressedBorderRadius: BorderRadius.circular(8), // Pill to rounded square
-  ),
-  child: const Text('Play'),
-)
-```
-
-- **Springs:** use `BouncyPressSpring.snappy`, `bouncy`, or `gentle`, or set `stiffness`, `dampingRatio`, and `mass` yourself. A spring replaces the duration and curves. `BouncyButtonAnimation.springy` is a ready-made preset.
-- **Shape:** `pressedBorderRadius` morphs the corners during the press. A circle button starts as a circle.
-- **Hover:** with a mouse, the face rises 2 pixels while hovered. Change it with `BouncyButtonInteraction.hoverLift`, or set 0 to turn it off.
-
-Reduced motion turns off springs, hover lift, and the error shake: the button moves instantly.
-
-### Press Effect on Any Widget
-
-`BouncyPressable` adds a press-and-shrink effect to any widget, with the same keyboard, screen reader, and reduced-motion support as `BouncyButton`:
+`BouncyPressable` gives any widget, such as a product card, a photo, or a list item, the same satisfying press. It shrinks slightly while held and springs back on release.
 
 ```dart
 BouncyPressable(
   onTap: () => openProduct(product),
-  scaleFactor: 0.95,
   child: ProductCard(product),
 )
 ```
 
-When pressables are nested, pressing the inner one leaves the outer one still. For a card containing its own buttons, set `semanticsButton: false` so screen readers can still reach those buttons.
+When one pressable sits inside another, such as a heart button on a card, only the one you touch reacts. If you'd rather avoid Material imports, use `package:bouncy_button/pressable.dart`.
 
-`BouncyPressable` needs no Material code. To keep Material out of your imports, use `package:bouncy_button/pressable.dart`.
+### Button groups
 
-### One Press at a Time
+A row of connected buttons for picking one option, like Day, Week, or Month. Set `multiSelect: true` to allow several.
 
-Flutter tracks each finger separately, so two fingers can press two buttons at once. To allow only one press at a time, wrap part of the app in `BouncyExclusiveScope`:
+```dart
+BouncyButtonGroup<String>(
+  segments: const [
+    BouncyButtonSegment(value: 'day', label: Text('Day')),
+    BouncyButtonSegment(value: 'week', label: Text('Week')),
+    BouncyButtonSegment(value: 'month', label: Text('Month')),
+  ],
+  selected: {view},
+  onSelectionChanged: (selection) => setState(() => view = selection.first),
+)
+```
+
+Screen readers announce which option is selected.
+
+### Motion that feels alive
+
+- **Springs:** with a spring, the button follows your finger naturally. Press again while it's still rising, and it smoothly turns around instead of restarting. Try `BouncyButtonAnimation(spring: BouncyPressSpring.bouncy)`, or the `snappy` and `gentle` springs.
+- **Changing shape:** `pressedBorderRadius` changes the corners while pressed, for example from a pill to a rounded square.
+- **Hover:** on desktop and web, the button rises slightly when the mouse is over it.
+
+People who turn on "reduce motion" in their system settings get instant, still buttons instead.
+
+### Built for everyone
+
+These work automatically, with no extra code:
+
+- **Screen readers** announce each button, and its loading, success, and error states.
+- **Keyboards:** Tab moves between buttons, Enter or Space presses them, and a focus ring shows where you are.
+- **Large text:** buttons grow to fit bigger system fonts instead of cutting words off.
+- **Reduce motion** is respected.
+
+Two options help further:
+
+- `tooltip: 'Add to favorites'` explains a button that only has an icon, on hover, long press, and to screen readers.
+- `BouncyButtonStyle(minTapTarget: 48)` makes a small button easier to hit without changing how it looks.
+
+### Style your whole app at once
+
+Set your button styles once in your theme, and every button follows them:
 
 ```dart
 MaterialApp(
-  builder: (context, child) => BouncyExclusiveScope(child: child!),
-)
-```
-
-Inside the scope, a press that starts while another button is held is ignored. Keyboard and screen reader activation are not affected.
-
-To let only one async action run at a time, such as two sign-in buttons, set `lockDuringLoading`. While one is loading, the other async buttons in the scope are disabled:
-
-```dart
-BouncyExclusiveScope(
-  lockDuringLoading: true,
-  child: Column(children: [googleSignInButton, appleSignInButton]),
-)
-```
-
-### Tooltips and Tap Targets
-
-- **Tooltip:** `BouncyButton(tooltip: 'Add to favorites')` shows on hover or long press, and screen readers read it once. Use it for buttons with only an icon.
-- **Tap target:** a button drawn smaller than 48 pixels is hard to tap. `BouncyButtonStyle(minTapTarget: 48)` enlarges the tap area without changing the look. It adds space around the button.
-
-### Tap Callbacks
-
-Both widgets accept `onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`. A button with only `onLongPress` stays enabled.
-
-### Apps Using material_ui
-
-Flutter is moving Material into the separate `material_ui` package, whose `Theme` is a different class from the SDK's. A `BouncyButtonTheme` in a `material_ui` theme's extensions won't reach the buttons. Use `BouncyButtonScope` instead:
-
-```dart
-BouncyButtonScope(
-  theme: const BouncyButtonTheme(
-    primaryStyle: BouncyButtonStyle(backgroundColor: Colors.teal),
+  theme: ThemeData(
+    extensions: const [
+      BouncyButtonTheme(
+        primaryStyle: BouncyButtonStyle(backgroundColor: Colors.indigo),
+        defaultAnimation: BouncyButtonAnimation.smooth,
+      ),
+    ],
   ),
-  child: child,
 )
 ```
 
-Default colors still come from the SDK's `Theme`. See Flutter's [migration guide](https://docs.flutter.dev/release/breaking-changes/material-ui-and-cupertino-ui) for passing your theme to packages that haven't migrated.
+A style passed to a single button still wins. If your app uses Flutter's newer `material_ui` package, wrap your app in `BouncyButtonScope(theme: ...)` instead.
 
-## Customization Options
+### More control
 
-### BouncyButtonStyle Properties
+- **Press from code:** a `BouncyButtonController` can press a button, reset it, or tell you whether it's loading. This is useful for keyboard shortcuts or onboarding tours.
+- **One action at a time:** `BouncyExclusiveScope(lockDuringLoading: true, child: ...)` stops two actions from running together, such as "Sign in with Google" and "Sign in with Apple".
+- **Feedback:** choose a haptic, such as `BouncyHapticFeedbackType.medium`, or add a click sound with `enableSound: true`.
+- **Glass:** `BouncyButtonStyle.glass` gives a frosted, see-through button for colorful backgrounds.
+- **Gradients and custom content:** use a `gradient`, a full `decoration`, or a `builder` that knows when the button is pressed.
 
-| Property          | Type                    | Description                     |
-| ----------------- | ----------------------- | ------------------------------- |
-| `height`          | `double`                | Minimum face height (default: 60) |
-| `width`           | `double?`               | Button width (null = auto-size) |
-| `elevation`       | `double`                | 3D depth effect (default: 8)    |
-| `backgroundColor` | `Color?`                | Background color                |
-| `foregroundColor` | `Color?`                | Default text and icon color     |
-| `gradient`        | `Gradient?`             | Gradient background             |
-| `borderRadius`    | `BorderRadiusGeometry?` | Corner radius                   |
-| `shadowDarkness`  | `double`                | Shadow darkness (0.0-1.0)       |
-| `padding`         | `EdgeInsetsGeometry?`   | Internal padding                |
-| `border`          | `BoxBorder?`            | Border decoration               |
-| `fill`            | `BouncyButtonFill`      | filled, tonal, outlined, ghost, or glass (default: filled) |
-| `textStyle`       | `TextStyle?`            | Default text style              |
-| `iconSize`        | `double?`               | Default icon size               |
-| `pressedBorderRadius` | `BorderRadiusGeometry?` | Corners while fully pressed |
-| `tone`            | `BouncyButtonTone`      | normal or destructive (default: normal) |
-| `minTapTarget`    | `double?`               | Smallest tap area, such as 48   |
+## Reference
 
-### BouncyButtonAnimation Properties
+The full API, with every option, is on [pub.dev](https://pub.dev/documentation/bouncy_button/latest/). These are the ones you'll reach for most.
 
-| Property        | Type                        | Description               |
-| --------------- | --------------------------- | ------------------------- |
-| `duration`      | `Duration`                  | Animation duration        |
-| `reverseDuration` | `Duration?`               | Release duration          |
-| `curve`         | `Curve`                     | Animation curve           |
-| `reverseCurve`  | `Curve?`                    | Release curve             |
-| `type`          | `BouncyButtonAnimationType` | Animation type            |
-| `scaleAmount`   | `double`                    | Scale factor (0.0-1.0)    |
-| `rotationAngle` | `double`                    | Rotation angle in radians |
-| `spring`        | `BouncyPressSpring?`        | Spring physics, replacing duration and curves |
+### BouncyButtonStyle
 
-### BouncyButtonInteraction Properties
+| Option | What it does |
+| --- | --- |
+| `backgroundColor`, `foregroundColor` | Face color, and text and icon color |
+| `fill` | `filled`, `tonal`, `outlined`, `ghost`, or `glass` |
+| `tone` | `normal` or `destructive` |
+| `height`, `width` | Minimum height, and width. Leave `width` empty to fit the label, or use `double.infinity` to fill the space |
+| `elevation`, `shadowDarkness` | How deep the press goes, and how dark the layer underneath is |
+| `borderRadius`, `pressedBorderRadius` | Corners at rest, and while pressed |
+| `padding`, `textStyle`, `iconSize` | Inner spacing, text style, and icon size |
+| `gradient`, `border`, `shadows` | Extra decoration |
+| `minTapTarget` | Smallest tap area, such as 48 |
 
-| Property               | Type                 | Description             |
-| ---------------------- | -------------------- | ----------------------- |
-| `enableHapticFeedback` | `bool`               | Enable haptic feedback  |
-| `hapticFeedbackType`   | `HapticFeedbackType` | Type of haptic feedback |
-| `enableSplash`         | `bool`               | Enable splash effect    |
-| `splashColor`          | `Color?`             | Splash color            |
-| `cursor`               | `MouseCursor?`       | Mouse cursor on hover   |
-| `hoverColor`           | `Color?`             | Overlay color on hover  |
-| `focusColor`           | `Color?`             | Keyboard focus ring     |
-| `hoverLift`            | `double`             | Rise on mouse hover (default: 2) |
-| `enableSound`          | `bool`               | Play the system click   |
-| `onPressSound`         | `VoidCallback?`      | Play your own sound     |
+### BouncyButtonAnimation
 
-## Migrating to 2.0
+| Option | What it does |
+| --- | --- |
+| `type` | `depth`, `scale`, `rotation`, `bounce`, `fade`, or `slide` |
+| `duration`, `curve` | Speed and feel of the press |
+| `reverseDuration`, `reverseCurve` | Speed and feel of the release |
+| `spring` | Spring physics, which replaces duration and curves |
 
-- **Full-width buttons:** a button with no `width` now fits its child. Add `width: double.infinity` to any button that should fill its parent.
-- **Dragging:** moving a finger away from the button now cancels the press, as with Material buttons. Dragging and releasing on the button no longer calls `onPressed`.
-- **Text colors:** text and icons now default to a color that contrasts with the button. Set `foregroundColor` to choose your own.
-- **Long press only:** a button with `onLongPress` but no `onPressed` is now enabled. Set `enabled: false` to disable it.
+### BouncyButtonInteraction
 
-See the [changelog](CHANGELOG.md) for the full list.
+| Option | What it does |
+| --- | --- |
+| `enableHapticFeedback`, `hapticFeedbackType` | Vibration on press |
+| `enableSound`, `onPressSound` | System click, or your own sound |
+| `enableSplash`, `splashColor` | Material ripple |
+| `hoverColor`, `hoverLift`, `focusColor`, `cursor` | Mouse and keyboard highlights |
 
-## Migration Examples
+### BouncyButtonFeedback
 
-### Example A: a press effect on any widget
+| Option | What it does |
+| --- | --- |
+| `loadingBuilder`, `successBuilder`, `errorBuilder` | Your own loading, success, and error content |
+| `loadingText` | Text next to the spinner |
+| `showSuccess`, `showError`, `shakeOnError` | Which results to show |
+| `resultDuration`, `minLoadingDuration` | How long results and loading stay visible |
+| `loadingLabel`, `successLabel`, `errorLabel` | What screen readers say. Translate these for your app |
+
+## Example app
+
+The [example app](example/) shows every feature in action, including a small shop with a checkout that can succeed, fail, and retry. It runs on built-in sample data, so it needs no setup:
+
+```bash
+cd example
+flutter run
+```
+
+## Upgrading
+
+### From 1.x to 2.0
+
+- **Width:** a button with no `width` now fits its label. Add `width: double.infinity` where it should fill the space.
+- **Dragging:** sliding your finger off the button now cancels the press, like Material buttons.
+- **Text color:** text now picks a color that's readable on the button. Set `foregroundColor` to choose your own.
+- **Long press only:** a button with only `onLongPress` is now enabled. Set `enabled: false` to disable it.
+
+See the [changelog](CHANGELOG.md) for everything else.
+
+### Migration examples
+
+#### Example A: a press effect on any widget
 
 ```dart
 // Before
@@ -577,9 +313,9 @@ Bounceable(onTap: open, scaleFactor: 0.9, child: card)
 BouncyPressable(onTap: open, scaleFactor: 0.9, child: card)
 ```
 
-`duration`, `reverseDuration`, `curve`, `reverseCurve`, `onTapDown`, `onTapUp`, `onTapCancel`, `onLongPress`, and `hitTestBehavior` keep the same names. The default `scaleFactor` is 0.95.
+The timing and callback options keep their names. The default `scaleFactor` is 0.95.
 
-### Example B: blocking repeat taps on an existing button
+#### Example B: blocking repeat taps on an existing button
 
 ```dart
 // Before
@@ -597,9 +333,9 @@ BouncyAsyncBuilder(
 )
 ```
 
-Show progress with `status`. To pass `null` to the button while it's busy, set `disableWhileBusy: true`.
+To disable the button while it's busy, set `disableWhileBusy: true`.
 
-### Example C: a 3D button from a few values
+#### Example C: a 3D button from a few values
 
 ```dart
 // Before
@@ -623,43 +359,16 @@ BouncyButton(
 )
 ```
 
-Leave out `width` to fit the label, or use `double.infinity` to fill the space.
-
-## Examples
-
-The [example](example/) app demonstrates every feature, including a mock store with loading, error, and retry states. It runs entirely on mock data, so it needs no setup.
-
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Bug reports, ideas, and pull requests are welcome. See the [contributing guide](CONTRIBUTING.md) to get started, and please follow the [code of conduct](CODE_OF_CONDUCT.md).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT. See [LICENSE](LICENSE).
 
 ## Author
 
-**Ibrahim Lokman**
+Made by **Ibrahim Lokman** in Bangladesh. Find me on [GitHub](https://github.com/Ibrahim-Lokman) or [LinkedIn](https://www.linkedin.com/in/ibrahim-lokman/), or [email me](mailto:ibrahimlokman.bd@gmail.com).
 
-- 🌐 GitHub: [@Ibrahim-Lokman](https://github.com/Ibrahim-Lokman)
-- 💼 LinkedIn: [ibrahim-lokman](https://www.linkedin.com/in/ibrahim-lokman/)
-- 📧 Email: ibrahimlokman.bd@gmail.com
-- 📍 Location: Bangladesh (GMT+6)
-
-## Support
-
-If you find this package useful, please consider:
-
-- ⭐ Giving it a star on [GitHub](https://github.com/Ibrahim-Lokman/bouncy_button)
-- 👍 Liking it on [pub.dev](https://pub.dev/packages/bouncy_button)
-- 🐛 Reporting issues on the [issue tracker](https://github.com/Ibrahim-Lokman/bouncy_button/issues)
-
----
-
-_Built with ❤️ in Bangladesh_
+If Bouncy Button helps you, a ⭐ on [GitHub](https://github.com/Ibrahim-Lokman/bouncy_button) or a 👍 on [pub.dev](https://pub.dev/packages/bouncy_button) helps others find it.
