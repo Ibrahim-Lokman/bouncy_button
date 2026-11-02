@@ -1,3 +1,7 @@
+## [2.1.2] - 2026-11-02
+
+- The Example tab on pub.dev now shows a one-screen tour of the main features, instead of the demo app's launcher. No code changes.
+
 ## [2.1.1] - 2026-11-02
 
 - Rewrote the README: each feature is now explained in plain words with a short example, and the option tables moved to a reference section. No code changes.
