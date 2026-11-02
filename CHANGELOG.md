@@ -35,6 +35,9 @@
 
 ### Added
 
+- `BouncyPressable`, which adds the press effect to any widget. It needs no Material code, and is also available on its own from `package:bouncy_button/pressable.dart`.
+- Nested presses: pressing a button or pressable inside another leaves the outer one still.
+- `BouncyExclusiveScope`, which allows only one press at a time below it.
 - `BouncyButton.tertiary`, using `BouncyButtonTheme.tertiaryStyle`.
 - `BouncyButton.onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`.
 - `BouncyButtonStyle.foregroundColor`.

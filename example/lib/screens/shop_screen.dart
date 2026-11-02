@@ -1,3 +1,4 @@
+import 'package:bouncy_button/bouncy_button.dart';
 import 'package:flutter/material.dart';
 
 import '../data/mock_backend.dart';
@@ -133,9 +134,8 @@ class _ShopScreenState extends State<ShopScreen> {
                   product: product,
                   isFavorite: _favorites.contains(product.id),
                   onFavorite: () => _toggleFavorite(product),
-                  onOpen: () => DemoScope.read(context)
-                      .log
-                      .add('Opened ${product.name}'),
+                  onOpen: () =>
+                      DemoScope.read(context).log.add('Opened ${product.name}'),
                 );
               },
             ),
@@ -161,40 +161,67 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final favoriteLabel = isFavorite
+        ? 'Remove ${product.name} from favorites'
+        : 'Add ${product.name} to favorites';
+    // The whole card is pressable, with a separate pressable heart inside it.
+    // Pressing the heart leaves the card still.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: BouncyPressable(
         onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: product.color,
-                foregroundColor: Colors.white,
-                child: Icon(product.icon),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(product.name, style: textTheme.titleMedium),
-                    Text(product.description, style: textTheme.bodySmall),
-                    const SizedBox(height: 4),
-                    Text(formatPrice(product.priceCents)),
-                  ],
+        scaleFactor: 0.97,
+        // The heart inside must stay separately reachable by screen readers.
+        semanticsButton: false,
+        focusColor: theme.colorScheme.primary,
+        focusBorderRadius: const BorderRadius.all(Radius.circular(12)),
+        child: Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: product.color,
+                  foregroundColor: Colors.white,
+                  child: Icon(product.icon),
                 ),
-              ),
-              IconButton(
-                onPressed: onFavorite,
-                tooltip: isFavorite
-                    ? 'Remove ${product.name} from favorites'
-                    : 'Add ${product.name} to favorites',
-                icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(product.name, style: textTheme.titleMedium),
+                      Text(product.description, style: textTheme.bodySmall),
+                      const SizedBox(height: 4),
+                      Text(formatPrice(product.priceCents)),
+                    ],
+                  ),
+                ),
+                Tooltip(
+                  message: favoriteLabel,
+                  excludeFromSemantics: true,
+                  child: BouncyPressable(
+                    onTap: onFavorite,
+                    scaleFactor: 0.8,
+                    haptic: HapticFeedbackType.selection,
+                    semanticLabel: favoriteLabel,
+                    focusColor: theme.colorScheme.primary,
+                    focusBorderRadius:
+                        const BorderRadius.all(Radius.circular(24)),
+                    child: SizedBox.square(
+                      dimension: 48,
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorite ? Colors.pink : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -34,8 +34,7 @@ class MockApiException implements Exception {
 /// failures use a seeded generator, so a run can be repeated, and tests can
 /// force exact outcomes with [script].
 class MockBackend {
-  MockBackend({required this.settings, int seed = 42})
-      : _random = Random(seed);
+  MockBackend({required this.settings, int seed = 42}) : _random = Random(seed);
 
   final DemoSettings settings;
   final Random _random;

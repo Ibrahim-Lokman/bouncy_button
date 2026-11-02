@@ -1,7 +1,9 @@
 library;
 
-// Export the main widget
+// Export the main widgets
 export 'src/bouncy_button_widget.dart';
+export 'src/exclusive_scope.dart' show BouncyExclusiveScope;
+export 'src/pressable.dart';
 
 // Export configuration classes
 export 'src/styles.dart';

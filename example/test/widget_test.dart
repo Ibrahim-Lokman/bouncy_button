@@ -42,8 +42,8 @@ Future<void> _openTab(WidgetTester tester, String label) async {
 }
 
 Future<void> _pullToRefresh(WidgetTester tester) async {
-  await tester.fling(find.byType(ListView).hitTestable().first,
-      const Offset(0, 500), 1000);
+  await tester.fling(
+      find.byType(ListView).hitTestable().first, const Offset(0, 500), 1000);
   await tester.pumpAndSettle();
 }
 
@@ -205,6 +205,22 @@ void main() {
       expect(add, findsOneWidget);
       expect(find.text(MockFailure.server.message), findsOneWidget);
       expect(backend.favorites, isNot(contains(product.id)));
+    });
+
+    testWidgets('tapping a heart does not open the product', (tester) async {
+      await _pumpApp(tester);
+      await _openTab(tester, 'Shop');
+      final product = mockProducts.first;
+
+      await tester.tap(find.byTooltip('Add ${product.name} to favorites'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(product.name));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Event log'));
+      await tester.pumpAndSettle();
+      expect(find.text('Saved ${product.name}'), findsOneWidget);
+      expect(find.text('Opened ${product.name}'), findsOneWidget);
     });
 
     testWidgets('a favorite that saves stays saved', (tester) async {

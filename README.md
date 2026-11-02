@@ -11,7 +11,8 @@ A highly customizable Flutter button widget with engaging 3D depth effects, smoo
 🎯 **Gesture Support** - Tap and long press, with a visible press on even the quickest tap  
 ♿ **Accessibility** - Screen reader support, keyboard activation, a focus ring, large text, and the system "reduce motion" setting  
 🎨 **Theme Integration** - App-wide styles through `BouncyButtonTheme`, with legible default colors in light and dark themes  
-🖥️ **Desktop and Web** - Hover highlight, mouse cursor, and keyboard navigation
+🖥️ **Desktop and Web** - Hover highlight, mouse cursor, and keyboard navigation  
+🧩 **Any Widget** - `BouncyPressable` adds the press effect to cards, images, and list items
 
 ## Installation
 
@@ -269,6 +270,38 @@ final triadic = BouncyButtonColors.triadic(Colors.blue);
 final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 ```
 
+### Press Effect on Any Widget
+
+`BouncyPressable` adds a press-and-shrink effect to any widget, with the same keyboard, screen reader, and reduced-motion support as `BouncyButton`:
+
+```dart
+BouncyPressable(
+  onTap: () => openProduct(product),
+  scaleFactor: 0.95,
+  child: ProductCard(product),
+)
+```
+
+When pressables are nested, pressing the inner one leaves the outer one still. For a card containing its own buttons, set `semanticsButton: false` so screen readers can still reach those buttons.
+
+`BouncyPressable` needs no Material code. To keep Material out of your imports, use `package:bouncy_button/pressable.dart`.
+
+### One Press at a Time
+
+Flutter tracks each finger separately, so two fingers can press two buttons at once. To allow only one press at a time, wrap part of the app in `BouncyExclusiveScope`:
+
+```dart
+MaterialApp(
+  builder: (context, child) => BouncyExclusiveScope(child: child!),
+)
+```
+
+Inside the scope, a press that starts while another button is held is ignored. Keyboard and screen reader activation are not affected.
+
+### Tap Callbacks
+
+Both widgets accept `onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`. A button with only `onLongPress` stays enabled.
+
 ## Customization Options
 
 ### BouncyButtonStyle Properties
@@ -315,12 +348,13 @@ final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 - **Full-width buttons:** a button with no `width` now fits its child. Add `width: double.infinity` to any button that should fill its parent.
 - **Dragging:** moving a finger away from the button now cancels the press, as with Material buttons. Dragging and releasing on the button no longer calls `onPressed`.
 - **Text colors:** text and icons now default to a color that contrasts with the button. Set `foregroundColor` to choose your own.
+- **Long press only:** a button with `onLongPress` but no `onPressed` is now enabled. Set `enabled: false` to disable it.
 
 See the [changelog](CHANGELOG.md) for the full list.
 
 ## Examples
 
-Check out the [example](example/) folder for a complete sample app demonstrating all features.
+The [example](example/) app demonstrates every feature, including a mock store with loading, error, and retry states. It runs entirely on mock data, so it needs no setup.
 
 ## Contributing
 

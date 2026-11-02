@@ -31,6 +31,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _sizing(),
         _states(),
         _interactions(),
+        _pressables(),
         _themed(context),
         _colorUtilities(),
       ],
@@ -382,6 +383,86 @@ class _GalleryScreenState extends State<GalleryScreen> {
             ),
           ),
           child: const SizedBox.shrink(),
+        ),
+      ],
+    );
+  }
+
+  Widget _pressables() {
+    final scheme = Theme.of(context).colorScheme;
+    Widget tile(String label, Color color) => DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(label, style: TextStyle(color: scheme.onPrimary)),
+          ),
+        );
+
+    return DemoSection(
+      title: 'BouncyPressable',
+      subtitle: 'The press effect on any widget. Hold the inner tile: the '
+          'outer one stays still.',
+      children: [
+        BouncyPressable(
+          onTap: _log('Pressable tile'),
+          child: tile('Any widget', scheme.primary),
+        ),
+        BouncyPressable(
+          onTap: _log('Pressable tile'),
+          onLongPress: _log('Pressable long press'),
+          scaleFactor: 0.85,
+          haptic: HapticFeedbackType.medium,
+          child: tile('scaleFactor 0.85', scheme.tertiary),
+        ),
+        BouncyPressable(
+          onTap: _log('Outer tile'),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: scheme.secondary,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Outer', style: TextStyle(color: scheme.onSecondary)),
+                  const SizedBox(height: 12),
+                  BouncyPressable(
+                    onTap: _log('Inner tile'),
+                    child: tile('Inner', scheme.primary),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        BouncyExclusiveScope(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('BouncyExclusiveScope: press both with two fingers'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  BouncyButton(
+                    onPressed: _log('Exclusive A'),
+                    child: const Text('A'),
+                  ),
+                  BouncyButton(
+                    onPressed: _log('Exclusive B'),
+                    child: const Text('B'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
