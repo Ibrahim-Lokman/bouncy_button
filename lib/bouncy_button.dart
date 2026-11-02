@@ -9,6 +9,7 @@ export 'src/pressable.dart';
 export 'src/styles.dart';
 export 'src/animations.dart';
 export 'src/interactions.dart';
+export 'src/feedback.dart';
 
 // Export theme
 export 'src/theme.dart';

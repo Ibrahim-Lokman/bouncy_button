@@ -1,4 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'feedback.dart';
 import 'styles.dart';
 import 'animations.dart';
 import 'interactions.dart';
@@ -34,7 +38,11 @@ class BouncyButton extends StatefulWidget {
   const BouncyButton({
     super.key,
     required this.child,
-    required this.onPressed,
+    this.onPressed,
+    this.onPressedAsync,
+    this.onError,
+    this.isLoading,
+    this.feedback,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -48,7 +56,11 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
-  }) : _variant = _Variant.standard;
+  })  : assert(
+          onPressed == null || onPressedAsync == null,
+          'Use either onPressed or onPressedAsync, not both.',
+        ),
+        _variant = _Variant.standard;
 
   /// Creates a primary style bouncy button.
   ///
@@ -57,7 +69,11 @@ class BouncyButton extends StatefulWidget {
   const BouncyButton.primary({
     super.key,
     required this.child,
-    required this.onPressed,
+    this.onPressed,
+    this.onPressedAsync,
+    this.onError,
+    this.isLoading,
+    this.feedback,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -71,7 +87,11 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
-  }) : _variant = _Variant.primary;
+  })  : assert(
+          onPressed == null || onPressedAsync == null,
+          'Use either onPressed or onPressedAsync, not both.',
+        ),
+        _variant = _Variant.primary;
 
   /// Creates a secondary style bouncy button.
   ///
@@ -80,7 +100,11 @@ class BouncyButton extends StatefulWidget {
   const BouncyButton.secondary({
     super.key,
     required this.child,
-    required this.onPressed,
+    this.onPressed,
+    this.onPressedAsync,
+    this.onError,
+    this.isLoading,
+    this.feedback,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -94,7 +118,11 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
-  }) : _variant = _Variant.secondary;
+  })  : assert(
+          onPressed == null || onPressedAsync == null,
+          'Use either onPressed or onPressedAsync, not both.',
+        ),
+        _variant = _Variant.secondary;
 
   /// Creates a tertiary style bouncy button.
   ///
@@ -103,7 +131,11 @@ class BouncyButton extends StatefulWidget {
   const BouncyButton.tertiary({
     super.key,
     required this.child,
-    required this.onPressed,
+    this.onPressed,
+    this.onPressedAsync,
+    this.onError,
+    this.isLoading,
+    this.feedback,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -117,7 +149,11 @@ class BouncyButton extends StatefulWidget {
     this.autofocus = false,
     this.semanticLabel,
     this.builder,
-  }) : _variant = _Variant.tertiary;
+  })  : assert(
+          onPressed == null || onPressedAsync == null,
+          'Use either onPressed or onPressedAsync, not both.',
+        ),
+        _variant = _Variant.tertiary;
 
   final _Variant _variant;
 
@@ -128,8 +164,39 @@ class BouncyButton extends StatefulWidget {
 
   /// Called when the button is tapped or otherwise activated.
   ///
-  /// If this and [onLongPress] are both null, the button is disabled.
+  /// If this, [onPressedAsync], and [onLongPress] are all null, the button is
+  /// disabled.
   final VoidCallback? onPressed;
+
+  /// Called when the button is pressed, showing a loading state until the
+  /// returned future completes.
+  ///
+  /// While it runs, the button ignores further presses, so a payment or form
+  /// can't be sent twice. It then shows success or, if the future throws, an
+  /// error, as configured by [feedback]. Use either this or [onPressed].
+  ///
+  /// ```dart
+  /// BouncyButton(
+  ///   onPressedAsync: () => api.placeOrder(cart),
+  ///   onError: (error, stack) => showError(error),
+  ///   child: const Text('Pay'),
+  /// )
+  /// ```
+  final Future<void> Function()? onPressedAsync;
+
+  /// Called when [onPressedAsync] throws.
+  ///
+  /// If null, the error is reported to [FlutterError.reportError], so it is
+  /// never silently lost.
+  final void Function(Object error, StackTrace stackTrace)? onError;
+
+  /// Shows the loading state when true, for loading managed outside the
+  /// button. While true, the button ignores presses.
+  final bool? isLoading;
+
+  /// How the button shows loading, success, and error. If null,
+  /// [BouncyButtonTheme.defaultFeedback] is used.
+  final BouncyButtonFeedback? feedback;
 
   /// Called when the button is long-pressed.
   final VoidCallback? onLongPress;
@@ -194,10 +261,121 @@ class BouncyButton extends StatefulWidget {
   State<BouncyButton> createState() => _BouncyButtonState();
 }
 
-class _BouncyButtonState extends State<BouncyButton> {
+class _BouncyButtonState extends State<BouncyButton>
+    with TickerProviderStateMixin {
+  static const Duration _shakeDuration = Duration(milliseconds: 450);
+
+  BouncyButtonStatus _asyncStatus = BouncyButtonStatus.idle;
+
+  /// Identifies the latest async run, so that an earlier one that finishes
+  /// late can't change what the button shows.
+  int _run = 0;
+
+  /// Holds success or error on screen, then returns to idle. An animation
+  /// rather than a timer, so that tests can wait for it with pumpAndSettle.
+  late final AnimationController _resultHold = AnimationController(
+    vsync: this,
+  )..addStatusListener(_handleResultHoldStatus);
+
+  late final AnimationController _shake = AnimationController(
+    vsync: this,
+    duration: _shakeDuration,
+  );
+
   bool get _isEnabled =>
       widget.enabled &&
-      (widget.onPressed != null || widget.onLongPress != null);
+      (widget.onPressed != null ||
+          widget.onPressedAsync != null ||
+          widget.onLongPress != null);
+
+  BouncyButtonStatus get _status =>
+      widget.isLoading ?? false ? BouncyButtonStatus.loading : _asyncStatus;
+
+  BouncyButtonFeedback get _feedback =>
+      widget.feedback ??
+      BouncyButtonTheme.of(context)?.defaultFeedback ??
+      const BouncyButtonFeedback();
+
+  @override
+  void dispose() {
+    _resultHold.dispose();
+    _shake.dispose();
+    super.dispose();
+  }
+
+  void _handleResultHoldStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted) {
+      setState(() => _asyncStatus = BouncyButtonStatus.idle);
+    }
+  }
+
+  Future<void> _runAsync() async {
+    final callback = widget.onPressedAsync;
+    if (callback == null || _status != BouncyButtonStatus.idle) {
+      return;
+    }
+    final run = ++_run;
+    setState(() => _asyncStatus = BouncyButtonStatus.loading);
+    try {
+      // Called inside the try, so a synchronous throw is caught too.
+      await callback();
+    } catch (error, stackTrace) {
+      _reportError(error, stackTrace);
+      if (mounted && run == _run) {
+        _showResult(BouncyButtonStatus.error);
+      }
+      return;
+    }
+    if (mounted && run == _run) {
+      _showResult(BouncyButtonStatus.success);
+    }
+  }
+
+  void _reportError(Object error, StackTrace stackTrace) {
+    final onError = widget.onError;
+    if (onError != null) {
+      onError(error, stackTrace);
+      return;
+    }
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stackTrace,
+        library: 'bouncy_button',
+        context: ErrorDescription('while running BouncyButton.onPressedAsync'),
+      ),
+    );
+  }
+
+  void _showResult(BouncyButtonStatus status) {
+    final feedback = _feedback;
+    final interaction = _interaction;
+    final success = status == BouncyButtonStatus.success;
+    if (!(success ? feedback.showSuccess : feedback.showError)) {
+      setState(() => _asyncStatus = BouncyButtonStatus.idle);
+      return;
+    }
+    setState(() => _asyncStatus = status);
+    if (interaction.enableHapticFeedback) {
+      success ? HapticFeedback.selectionClick() : HapticFeedback.heavyImpact();
+    }
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (!success && feedback.shakeOnError && !reduceMotion) {
+      _shake.forward(from: 0);
+    }
+    _resultHold
+      ..duration = feedback.resultDuration
+      ..forward(from: 0);
+  }
+
+  /// The horizontal shake offset, which dies away over the animation.
+  double get _shakeOffset {
+    final t = _shake.value;
+    if (t == 0 || t == 1) {
+      return 0;
+    }
+    return math.sin(t * math.pi * 6) * 8 * (1 - t);
+  }
 
   BouncyButtonStyle get _style {
     final theme = BouncyButtonTheme.of(context);
@@ -358,19 +536,66 @@ class _BouncyButtonState extends State<BouncyButton> {
     PressCoreData press,
   ) {
     final builder = widget.builder;
-    if (builder != null) {
-      return builder(context, press.isPressed);
-    }
-    return Padding(
-      padding: style.padding ??
-          const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      child: Align(
-        alignment: style.alignment ?? Alignment.center,
-        widthFactor: 1,
-        heightFactor: 1,
-        child: widget.child,
-      ),
+    final Widget content = builder != null
+        ? builder(context, press.isPressed)
+        : Padding(
+            padding: style.padding ??
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            child: Align(
+              alignment: style.alignment ?? Alignment.center,
+              widthFactor: 1,
+              heightFactor: 1,
+              child: widget.child,
+            ),
+          );
+    final status = _status;
+    final showContent = status == BouncyButtonStatus.idle;
+    // The content stays laid out while hidden, so the button keeps its size.
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        Visibility(
+          visible: showContent,
+          maintainState: true,
+          maintainAnimation: true,
+          maintainSize: true,
+          maintainSemantics: true,
+          child: content,
+        ),
+        if (!showContent)
+          Positioned.fill(
+            child: ExcludeSemantics(
+              child: Center(child: _buildStatus(context, status)),
+            ),
+          ),
+      ],
     );
+  }
+
+  Widget _buildStatus(BuildContext context, BouncyButtonStatus status) {
+    final feedback = _feedback;
+    switch (status) {
+      case BouncyButtonStatus.loading:
+        final builder = feedback.loadingBuilder;
+        if (builder != null) {
+          return builder(context);
+        }
+        return SizedBox.square(
+          dimension: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2.5,
+            color: IconTheme.of(context).color,
+          ),
+        );
+      case BouncyButtonStatus.success:
+        return feedback.successBuilder?.call(context) ??
+            const Icon(Icons.check_rounded);
+      case BouncyButtonStatus.error:
+        return feedback.errorBuilder?.call(context) ??
+            const Icon(Icons.error_outline_rounded);
+      case BouncyButtonStatus.idle:
+        return const SizedBox.shrink();
+    }
   }
 
   Widget _buildInk(
@@ -468,25 +693,28 @@ class _BouncyButtonState extends State<BouncyButton> {
     final face = _buildFace(context, style, interaction, press);
 
     Widget content = AnimatedBuilder(
-      animation: press.animation,
+      animation: Listenable.merge([press.animation, _shake]),
       builder: (context, _) {
         return PressTransform(
           animation: animationConfig,
           animationValue: press.animation.value,
           reduceMotion: reduceMotion,
-          child: Stack(
-            fit: StackFit.passthrough,
-            clipBehavior: Clip.none,
-            children: [
-              shadow,
-              Padding(
-                padding: EdgeInsets.only(bottom: style.elevation),
-                child: Transform.translate(
-                  offset: Offset(0, style.elevation * press.animation.value),
-                  child: face,
+          child: Transform.translate(
+            offset: Offset(_shakeOffset, 0),
+            child: Stack(
+              fit: StackFit.passthrough,
+              clipBehavior: Clip.none,
+              children: [
+                shadow,
+                Padding(
+                  padding: EdgeInsets.only(bottom: style.elevation),
+                  child: Transform.translate(
+                    offset: Offset(0, style.elevation * press.animation.value),
+                    child: face,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
@@ -525,8 +753,12 @@ class _BouncyButtonState extends State<BouncyButton> {
     final interaction = _interaction;
     final animation = _animationConfig;
 
+    final status = _status;
     Widget button = PressCore(
-      onTap: widget.onPressed,
+      onTap: widget.onPressed ??
+          (widget.onPressedAsync != null ? _runAsync : null),
+      busy: status != BouncyButtonStatus.idle,
+      semanticValue: _feedback.labelFor(status),
       onLongPress: widget.onLongPress,
       onTapDown: widget.onTapDown,
       onTapUp: widget.onTapUp,

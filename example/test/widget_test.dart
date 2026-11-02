@@ -6,7 +6,13 @@ import 'package:bouncy_button_example/state/demo_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-const List<String> _tabs = ['Gallery', 'Shop', 'Playground', 'Settings'];
+const List<String> _tabs = [
+  'Gallery',
+  'Shop',
+  'Checkout',
+  'Playground',
+  'Settings',
+];
 
 /// Pumps the app at [size], using a backend with no delay by default.
 Future<(DemoSettings, MockBackend)> _pumpApp(
@@ -235,6 +241,165 @@ void main() {
         find.byTooltip('Remove ${product.name} from favorites'),
         findsOneWidget,
       );
+    });
+  });
+
+  group('checkout', () {
+    Future<void> fillForm(WidgetTester tester, {String? card}) async {
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Name on card'),
+        'Ada Lovelace',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Email'),
+        'ada@example.com',
+      );
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Card number'),
+        card ?? '4242 4242 4242 4242',
+      );
+    }
+
+    Finder payButton() => find.ancestor(
+          of: find.textContaining('Pay \$'),
+          matching: find.byType(BouncyButton),
+        );
+
+    Future<void> tapPay(WidgetTester tester) async {
+      // The list only builds what is near the screen, so scroll rather than
+      // assume the button exists.
+      await tester.scrollUntilVisible(
+        payButton(),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(payButton());
+    }
+
+    testWidgets('a valid order is charged once and confirmed', (tester) async {
+      final (_, backend) = await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await fillForm(tester);
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+
+      expect(backend.charges, 1);
+      expect(find.textContaining('Order ORD-1001 placed'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Mock card charged 1 time'),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+    });
+
+    testWidgets('tapping Pay twice quickly charges once', (tester) async {
+      final settings = DemoSettings(
+        latency: const Duration(milliseconds: 500),
+      );
+      final (_, backend) = await _pumpApp(tester, settings: settings);
+      await _openTab(tester, 'Checkout');
+      await fillForm(tester);
+      await tapPay(tester);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(payButton(), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.tap(payButton(), warnIfMissed: false);
+
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+      expect(backend.charges, 1);
+    });
+
+    testWidgets('an incomplete form is not sent', (tester) async {
+      final (_, backend) = await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      backend.script([MockFailure.server]);
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enter the name on the card'), findsOneWidget);
+      expect(backend.charges, 0);
+      // The scripted failure is still waiting, so no request was made.
+      await tester.runAsync(
+        () => expectLater(
+          backend.fetchProducts(),
+          throwsA(isA<MockApiException>()),
+        ),
+      );
+    });
+
+    testWidgets('a declined card shows why, and can be retried',
+        (tester) async {
+      final (_, backend) = await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await fillForm(tester, card: '4000 0000 0000 0002');
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(MockFailure.declined.message), findsOneWidget);
+      expect(backend.charges, 0);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Card number'),
+        '4242 4242 4242 4242',
+      );
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+      expect(backend.charges, 1);
+    });
+
+    testWidgets('a network failure can be retried', (tester) async {
+      final (_, backend) = await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await fillForm(tester);
+      backend.script([MockFailure.network]);
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+      expect(find.text(MockFailure.network.message), findsOneWidget);
+      expect(backend.charges, 0);
+
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+      expect(backend.charges, 1);
+    });
+
+    testWidgets('a promo code applies a discount', (tester) async {
+      await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Promo code'),
+        'save10',
+      );
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(find.text('Discount'), findsOneWidget);
+    });
+
+    testWidgets('a wrong promo code shows an error', (tester) async {
+      await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Promo code'),
+        'FREE',
+      );
+      await tester.tap(find.text('Apply'));
+      await tester.pumpAndSettle();
+      expect(find.text(MockFailure.invalidPromo.message), findsOneWidget);
+      expect(find.text('Discount'), findsNothing);
+    });
+
+    testWidgets('quantity buttons stop at one', (tester) async {
+      await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      final remove = find.bySemanticsLabel('Remove one Studio Headphones');
+      expect(remove, findsOneWidget);
+      await tester.tap(find.bySemanticsLabel('Add one Studio Headphones'));
+      await tester.pumpAndSettle();
+      expect(find.text('2'), findsNWidgets(2));
+      await tester.tap(remove);
+      await tester.tap(remove);
+      await tester.pumpAndSettle();
+      expect(find.text('1'), findsOneWidget);
     });
   });
 

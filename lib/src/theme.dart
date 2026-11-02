@@ -3,6 +3,7 @@ import 'bouncy_button_widget.dart';
 import 'styles.dart';
 import 'animations.dart';
 import 'interactions.dart';
+import 'feedback.dart';
 // ============================================================================
 // lib/src/theme.dart
 // ============================================================================
@@ -20,6 +21,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
     this.tertiaryStyle,
     this.defaultAnimation,
     this.defaultInteraction,
+    this.defaultFeedback,
   });
 
   /// Style for [BouncyButton] and [BouncyButton.primary] when they are not
@@ -38,6 +40,9 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
   /// Default interaction configuration.
   final BouncyButtonInteraction? defaultInteraction;
 
+  /// Default loading, success, and error feedback for async buttons.
+  final BouncyButtonFeedback? defaultFeedback;
+
   @override
   BouncyButtonTheme copyWith({
     BouncyButtonStyle? primaryStyle,
@@ -45,6 +50,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
     BouncyButtonStyle? tertiaryStyle,
     BouncyButtonAnimation? defaultAnimation,
     BouncyButtonInteraction? defaultInteraction,
+    BouncyButtonFeedback? defaultFeedback,
   }) {
     return BouncyButtonTheme(
       primaryStyle: primaryStyle ?? this.primaryStyle,
@@ -52,6 +58,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
       tertiaryStyle: tertiaryStyle ?? this.tertiaryStyle,
       defaultAnimation: defaultAnimation ?? this.defaultAnimation,
       defaultInteraction: defaultInteraction ?? this.defaultInteraction,
+      defaultFeedback: defaultFeedback ?? this.defaultFeedback,
     );
   }
 

@@ -38,6 +38,9 @@
 - `BouncyPressable`, which adds the press effect to any widget. It needs no Material code, and is also available on its own from `package:bouncy_button/pressable.dart`.
 - Nested presses: pressing a button or pressable inside another leaves the outer one still.
 - `BouncyExclusiveScope`, which allows only one press at a time below it.
+- `BouncyButton.onPressedAsync`, which shows a loading state until the returned future completes, then success or an error. The button ignores presses meanwhile, so a form or payment can't be sent twice. Errors go to `onError`, or to `FlutterError.reportError`, and are never silently dropped.
+- `BouncyButton.isLoading`, for loading managed outside the button.
+- `BouncyButtonFeedback` to customize loading, success, and error, including the labels screen readers announce. Set it app-wide with `BouncyButtonTheme.defaultFeedback`.
 - `BouncyButton.tertiary`, using `BouncyButtonTheme.tertiaryStyle`.
 - `BouncyButton.onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`.
 - `BouncyButtonStyle.foregroundColor`.

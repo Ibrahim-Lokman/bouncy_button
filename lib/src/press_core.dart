@@ -84,6 +84,8 @@ class PressCore extends StatefulWidget {
     this.semanticLabel,
     this.semanticsButton = true,
     this.labelReplacesChildSemantics = false,
+    this.busy = false,
+    this.semanticValue,
   });
 
   /// Builds the control. Called when state changes, not on animation frames.
@@ -151,6 +153,13 @@ class PressCore extends StatefulWidget {
   /// This suits a button with simple content. It would hide the controls
   /// inside a wrapper.
   final bool labelReplacesChildSemantics;
+
+  /// Whether the control is working, such as waiting for a request. It keeps
+  /// focus and looks enabled, but ignores presses.
+  final bool busy;
+
+  /// A screen reader value, such as "Loading". Changes are announced.
+  final String? semanticValue;
 
   @override
   State<PressCore> createState() => _PressCoreState();
@@ -300,8 +309,10 @@ class _PressCoreState extends State<PressCore>
   /// progress, it belongs to a control below this one, or the exclusive scope
   /// gave it to another control.
   bool _press({bool withHaptics = true}) {
-    _releasePending = false;
-    if (_isPressed || _ignoringGesture || _activeChildren.isNotEmpty) {
+    if (_isPressed ||
+        widget.busy ||
+        _ignoringGesture ||
+        _activeChildren.isNotEmpty) {
       return false;
     }
     // In this order, so that a parent gives up any claim before this takes it.
@@ -316,6 +327,8 @@ class _PressCoreState extends State<PressCore>
     }
     _notifiedParent = parent;
     _exclusiveOwner = owner;
+    // A new press takes over from a quick tap that is still finishing.
+    _releasePending = false;
     setState(() => _isPressed = true);
     _controller.forward();
     if (withHaptics) {
@@ -344,7 +357,7 @@ class _PressCoreState extends State<PressCore>
   /// Handles activation that has no pointer: the keyboard and screen readers.
   void _activate() {
     final onTap = widget.onTap;
-    if (!_isEnabled || onTap == null) {
+    if (!_isEnabled || widget.busy || onTap == null) {
       return;
     }
     if (!_isPressed) {
@@ -393,13 +406,13 @@ class _PressCoreState extends State<PressCore>
   }
 
   void _handleTap() {
-    if (_isEnabled && !_ignoringGesture) {
+    if (_isEnabled && !widget.busy && !_ignoringGesture) {
       widget.onTap?.call();
     }
   }
 
   void _handleLongPress() {
-    if (!_ignoringGesture) {
+    if (!widget.busy && !_ignoringGesture) {
       widget.onLongPress?.call();
     }
   }
@@ -418,8 +431,10 @@ class _PressCoreState extends State<PressCore>
       explicitChildNodes: !widget.semanticsButton,
       enabled: widget.semanticsButton ? enabled : null,
       label: widget.semanticLabel,
+      value: widget.semanticValue,
+      liveRegion: widget.semanticValue != null,
       onTap: hasTap ? _activate : null,
-      onLongPress: hasLongPress ? widget.onLongPress : null,
+      onLongPress: hasLongPress ? _handleLongPress : null,
       child: FocusableActionDetector(
         enabled: enabled,
         focusNode: _focusNode,

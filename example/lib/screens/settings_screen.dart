@@ -47,7 +47,9 @@ class SettingsScreen extends StatelessWidget {
         ),
         ListTile(
           title: const Text('Reset mock data'),
-          subtitle: const Text('Restores favorites and clears the event log.'),
+          subtitle: const Text(
+            'Restores favorites, clears charges, and clears the event log.',
+          ),
           trailing: const Icon(Icons.restart_alt),
           onTap: () {
             scope.backend.reset();

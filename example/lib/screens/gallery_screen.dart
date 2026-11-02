@@ -1,6 +1,7 @@
 import 'package:bouncy_button/bouncy_button.dart';
 import 'package:flutter/material.dart';
 
+import '../data/mock_backend.dart';
 import '../state/demo_scope.dart';
 import '../widgets/demo_section.dart';
 
@@ -14,6 +15,7 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   bool _toggleEnabled = true;
+  bool _externalLoading = false;
 
   VoidCallback _log(String name) =>
       () => DemoScope.read(context).log.add('$name pressed');
@@ -30,6 +32,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _colors(),
         _sizing(),
         _states(),
+        _async(),
         _interactions(),
         _pressables(),
         _themed(context),
@@ -321,6 +324,69 @@ class _GalleryScreenState extends State<GalleryScreen> {
         OutlinedButton(
           onPressed: () => setState(() => _toggleEnabled = !_toggleEnabled),
           child: const Text('Toggle the button'),
+        ),
+      ],
+    );
+  }
+
+  /// Runs a mock request, which follows the latency and failure rate set in
+  /// Settings.
+  Future<void> _request(String name) async {
+    final scope = DemoScope.read(context);
+    await scope.backend.fetchProducts();
+    scope.log.add('$name finished');
+  }
+
+  void _failed(Object error, StackTrace stackTrace) {
+    final message =
+        error is MockApiException ? error.message : error.toString();
+    DemoScope.read(context).log.add('Failed: $message');
+  }
+
+  Widget _async() {
+    return DemoSection(
+      title: 'Async buttons',
+      subtitle: 'onPressedAsync shows loading, then success or an error, and '
+          'ignores presses meanwhile. Requests follow the latency and failure '
+          'rate in Settings.',
+      children: [
+        BouncyButton(
+          onPressedAsync: () => _request('Save'),
+          onError: _failed,
+          child: const Text('Save'),
+        ),
+        BouncyButton(
+          onPressedAsync: () async {
+            await Future<void>.delayed(const Duration(milliseconds: 600));
+            throw const MockApiException(MockFailure.server);
+          },
+          onError: _failed,
+          child: const Text('Always fails'),
+        ),
+        BouncyButton(
+          onPressedAsync: () => _request('Quiet save'),
+          onError: _failed,
+          feedback: const BouncyButtonFeedback(showSuccess: false),
+          child: const Text('showSuccess: false'),
+        ),
+        BouncyButton(
+          onPressedAsync: () => _request('Custom feedback'),
+          onError: _failed,
+          feedback: BouncyButtonFeedback(
+            loadingBuilder: (_) => const Text('Sending...'),
+            successBuilder: (_) => const Text('Sent!'),
+            resultDuration: const Duration(seconds: 2),
+          ),
+          child: const Text('Custom builders'),
+        ),
+        BouncyButton(
+          onPressed: _log('isLoading button'),
+          isLoading: _externalLoading,
+          child: const Text('isLoading'),
+        ),
+        OutlinedButton(
+          onPressed: () => setState(() => _externalLoading = !_externalLoading),
+          child: Text(_externalLoading ? 'Stop loading' : 'Start loading'),
         ),
       ],
     );

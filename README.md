@@ -270,6 +270,34 @@ final triadic = BouncyButtonColors.triadic(Colors.blue);
 final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 ```
 
+### Async Actions
+
+`onPressedAsync` shows a spinner until the returned future completes, then a check mark, or an error icon with a shake if it throws. The button ignores presses until it's ready again, so a form or payment can't be sent twice:
+
+```dart
+BouncyButton(
+  onPressedAsync: () => api.placeOrder(cart),
+  onError: (error, stackTrace) => showError(error),
+  child: const Text('Pay'),
+)
+```
+
+Use either `onPressed` or `onPressedAsync`, not both. Customize the states with `feedback`:
+
+```dart
+BouncyButton(
+  onPressedAsync: save,
+  feedback: BouncyButtonFeedback(
+    successBuilder: (context) => const Text('Saved'),
+    resultDuration: const Duration(seconds: 2),
+    loadingLabel: 'Enregistrement', // Read by screen readers
+  ),
+  child: const Text('Save'),
+)
+```
+
+If loading is managed elsewhere, pass `isLoading: true` instead. Errors without an `onError` handler go to `FlutterError.reportError`, so they are never silently lost.
+
 ### Press Effect on Any Widget
 
 `BouncyPressable` adds a press-and-shrink effect to any widget, with the same keyboard, screen reader, and reduced-motion support as `BouncyButton`:

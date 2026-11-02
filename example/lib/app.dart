@@ -2,6 +2,7 @@ import 'package:bouncy_button/bouncy_button.dart';
 import 'package:flutter/material.dart';
 
 import 'data/mock_backend.dart';
+import 'screens/checkout_screen.dart';
 import 'screens/gallery_screen.dart';
 import 'screens/playground_screen.dart';
 import 'screens/settings_screen.dart';
@@ -99,6 +100,7 @@ class _Destination {
 const List<_Destination> _destinations = [
   _Destination('Gallery', Icons.widgets_outlined, Icons.widgets),
   _Destination('Shop', Icons.storefront_outlined, Icons.storefront),
+  _Destination('Checkout', Icons.shopping_cart_outlined, Icons.shopping_cart),
   _Destination('Playground', Icons.tune_outlined, Icons.tune),
   _Destination('Settings', Icons.settings_outlined, Icons.settings),
 ];
@@ -135,6 +137,7 @@ class _DemoShellState extends State<DemoShell> {
       children: const [
         GalleryScreen(),
         ShopScreen(),
+        CheckoutScreen(),
         PlaygroundScreen(),
         SettingsScreen(),
       ],
