@@ -435,6 +435,70 @@ void main() {
     expect(code.data, contains('leading: const Icon(Icons.bolt)'));
   });
 
+  group('gallery 2.1 features', () {
+    Future<void> scrollTo(WidgetTester tester, Finder finder) async {
+      await tester.scrollUntilVisible(
+        finder,
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('the cooldown button ignores a quick second tap',
+        (tester) async {
+      await _pumpApp(tester, size: const Size(400, 1600));
+      final plain = find.textContaining('No cooldown');
+      await scrollTo(tester, plain);
+      await tester.tap(plain);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(plain);
+      await tester.pumpAndSettle();
+      expect(find.text('No cooldown: 2'), findsOneWidget);
+
+      final cooled = find.textContaining('cooldown 800 ms');
+      await tester.tap(cooled);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(cooled);
+      await tester.pumpAndSettle();
+      expect(find.text('cooldown 800 ms: 1'), findsOneWidget);
+    });
+
+    testWidgets('the controller presses and reports status', (tester) async {
+      final settings = DemoSettings(
+        latency: const Duration(milliseconds: 500),
+      );
+      await _pumpApp(tester, settings: settings, size: const Size(400, 1600));
+      await scrollTo(tester, find.text('Press from code'));
+      await tester.tap(find.text('Press from code'));
+      await tester.pump();
+      expect(find.text('Status: loading'), findsOneWidget);
+      expect(find.text('Saving…'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(find.text('Status: success'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(find.text('Status: idle'), findsOneWidget);
+    });
+
+    testWidgets('only one sign-in runs at a time', (tester) async {
+      final settings = DemoSettings(
+        latency: const Duration(milliseconds: 500),
+      );
+      await _pumpApp(tester, settings: settings, size: const Size(400, 1600));
+      await scrollTo(tester, find.text('Apple'));
+      await tester.tap(find.text('Google'));
+      await tester.pump();
+      await tester.tap(find.text('Apple'), warnIfMissed: false);
+      await tester.pump(const Duration(milliseconds: 600));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Event log'));
+      await tester.pumpAndSettle();
+      expect(find.text('Google sign-in finished'), findsOneWidget);
+      expect(find.text('Apple sign-in finished'), findsNothing);
+    });
+  });
+
   group('settings', () {
     testWidgets('right to left mirrors the app', (tester) async {
       final (settings, _) = await _pumpApp(tester);
