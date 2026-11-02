@@ -101,4 +101,4 @@ These change how existing apps look, so they wait for a major version:
 - [x] `flutter analyze` and `flutter test` pass, in the package and `example/`, on Flutter 3.27, current, and latest stable.
 - [ ] The example app runs on a device, and each new feature has been checked by eye. Checked as rendered screenshots, not yet on a device.
 - [x] `flutter pub publish --dry-run` shows 0 warnings.
-- [ ] Publish, then tag `v2.1.0` and push as the `Ibrahim-Lokman` account.
+- [x] Publish, then tag `v2.1.0` and push as the `Ibrahim-Lokman` account. Published on 2026-11-02, and CI passes on Flutter 3.27.4 and the latest stable.
