@@ -1,3 +1,7 @@
+## [2.1.1] - 2026-11-02
+
+- Rewrote the README: each feature is now explained in plain words with a short example, and the option tables moved to a reference section. No code changes.
+
 ## [2.1.0] - 2026-11-02
 
 ### Added
