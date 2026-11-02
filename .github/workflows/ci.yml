@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: Flutter ${{ matrix.flutter }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The minimum version in pubspec.yaml.
+          - flutter: "3.27.4"
+            channel: stable
+          # The latest stable release.
+          - flutter: ""
+            channel: stable
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter }}
+          channel: ${{ matrix.channel }}
+          cache: true
+
+      - name: Show Flutter version
+        run: flutter --version
+
+      - name: Get packages
+        run: flutter pub get
+
+      # Older Dart versions format code differently, so only check on latest.
+      - name: Check formatting
+        if: matrix.flutter == ''
+        run: dart format --output=none --set-exit-if-changed .
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Analyze example
+        working-directory: example
+        run: |
+          flutter pub get
+          flutter analyze
+
+      - name: Test example
+        working-directory: example
+        run: flutter test
+
+      - name: Check the package can be published
+        if: matrix.flutter == ''
+        run: flutter pub publish --dry-run
