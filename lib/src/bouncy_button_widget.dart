@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -418,9 +419,10 @@ class _BouncyButtonState extends State<BouncyButton>
 
   BouncyButtonStyle get _style {
     final style = _unresolvedStyle;
-    return style.fill == BouncyButtonFill.ghost && style.elevation != 0
-        ? style.copyWith(elevation: 0)
-        : style;
+    // A glass face would show its depth through it, so neither has depth.
+    final flat = style.fill == BouncyButtonFill.ghost ||
+        style.fill == BouncyButtonFill.glass;
+    return flat && style.elevation != 0 ? style.copyWith(elevation: 0) : style;
   }
 
   BouncyButtonStyle get _unresolvedStyle {
@@ -478,8 +480,20 @@ class _BouncyButtonState extends State<BouncyButton>
         return scheme.surface;
       case BouncyButtonFill.ghost:
         return Colors.transparent;
+      case BouncyButtonFill.glass:
+        final tint = style.backgroundColor ?? scheme.surface;
+        if (_highContrast(context)) {
+          return tint.withAlpha(255);
+        }
+        return tint.withAlpha(_isEnabled ? 110 : 60);
     }
   }
+
+  bool _highContrast(BuildContext context) =>
+      MediaQuery.maybeHighContrastOf(context) ?? false;
+
+  bool _isGlass(BouncyButtonStyle style) =>
+      style.fill == BouncyButtonFill.glass && style.decoration == null;
 
   /// The text and border color of outlined and ghost buttons.
   Color _accentColor(BuildContext context, BouncyButtonStyle style) {
@@ -527,6 +541,18 @@ class _BouncyButtonState extends State<BouncyButton>
     }
     if (base == scheme.secondaryContainer) {
       return scheme.onSecondaryContainer;
+    }
+    if (_isGlass(style)) {
+      if (!_isEnabled) {
+        return scheme.onSurface.withAlpha(97);
+      }
+      // Judged against the opaque tint, as the backdrop is unknown.
+      return style.backgroundColor == null
+          ? scheme.onSurface
+          : ThemeData.estimateBrightnessForColor(style.backgroundColor!) ==
+                  Brightness.dark
+              ? Colors.white
+              : Colors.black87;
     }
     return ThemeData.estimateBrightnessForColor(base) == Brightness.dark
         ? Colors.white
@@ -590,7 +616,13 @@ class _BouncyButtonState extends State<BouncyButton>
       border: style.border ??
           (outlined
               ? Border.all(color: _outlineColor(context, style), width: 2)
-              : null),
+              : _isGlass(style)
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.onSurface.withAlpha(
+                            _highContrast(context) ? 160 : 40,
+                          ),
+                    )
+                  : null),
       boxShadow:
           style.shadows ?? (style.shadow != null ? [style.shadow!] : null),
     );
@@ -639,8 +671,9 @@ class _BouncyButtonState extends State<BouncyButton>
         ? BoxShape.rectangle
         : style.decoration?.shape ?? style.shape;
     // A ghost button has no depth to push in, so a tint shows the press.
-    final ghostPressed =
-        style.fill == BouncyButtonFill.ghost && press.isPressed;
+    final ghostPressed = (style.fill == BouncyButtonFill.ghost ||
+            style.fill == BouncyButtonFill.glass) &&
+        press.isPressed;
     return BoxDecoration(
       color: ghostPressed
           ? interaction.highlightColor ?? fallback.withAlpha(36)
@@ -809,7 +842,7 @@ class _BouncyButtonState extends State<BouncyButton>
       );
     }
     final isCircle = style.shape == BoxShape.circle;
-    return ConstrainedBox(
+    final Widget face = ConstrainedBox(
       constraints: isCircle
           ? BoxConstraints.tightFor(height: style.height)
           : BoxConstraints(minHeight: style.height),
@@ -855,6 +888,21 @@ class _BouncyButtonState extends State<BouncyButton>
                 child: _buildInk(style, interaction, press, content),
               ),
             ),
+    );
+    if (!_isGlass(style) || _highContrast(context)) {
+      return face;
+    }
+    // Blurs what is behind the face, clipped to its shape.
+    final blurred = BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+      child: face,
+    );
+    if (isCircle) {
+      return ClipOval(child: blurred);
+    }
+    return ClipRRect(
+      borderRadius: _borderRadius(style)!.resolve(Directionality.of(context)),
+      child: blurred,
     );
   }
 
@@ -970,6 +1018,8 @@ class _BouncyButtonState extends State<BouncyButton>
       reverseCurve: animation.reverseCurve,
       spring: animation.spring,
       onHoverChange: _handleHover,
+      enableSound: interaction.enableSound,
+      onPressSound: interaction.onPressSound,
       haptic: interaction.enableHapticFeedback
           ? interaction.hapticFeedbackType
           : null,

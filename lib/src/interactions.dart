@@ -22,6 +22,8 @@ class BouncyButtonInteraction {
     this.hoverColor,
     this.focusColor,
     this.hoverLift = 2,
+    this.enableSound = false,
+    this.onPressSound,
   });
 
   /// Whether to enable haptic feedback.
@@ -61,6 +63,17 @@ class BouncyButtonInteraction {
   /// it off. Set 0 to disable.
   final double hoverLift;
 
+  /// Whether to play the system click sound on a press.
+  ///
+  /// The sound comes from the platform, which may have none, and plays only
+  /// if the device's sound settings allow it. Web plays nothing. For a sound
+  /// that plays everywhere, use [onPressSound] with an audio package.
+  final bool enableSound;
+
+  /// Called on a press, to play a sound of your own. It runs alongside
+  /// [enableSound], so turn that off if this replaces it.
+  final VoidCallback? onPressSound;
+
   /// Creates a copy with modified fields.
   BouncyButtonInteraction copyWith({
     bool? enableHapticFeedback,
@@ -73,6 +86,8 @@ class BouncyButtonInteraction {
     Color? hoverColor,
     Color? focusColor,
     double? hoverLift,
+    bool? enableSound,
+    VoidCallback? onPressSound,
   }) {
     return BouncyButtonInteraction(
       enableHapticFeedback: enableHapticFeedback ?? this.enableHapticFeedback,
@@ -85,6 +100,8 @@ class BouncyButtonInteraction {
       hoverColor: hoverColor ?? this.hoverColor,
       focusColor: focusColor ?? this.focusColor,
       hoverLift: hoverLift ?? this.hoverLift,
+      enableSound: enableSound ?? this.enableSound,
+      onPressSound: onPressSound ?? this.onPressSound,
     );
   }
 
@@ -103,7 +120,9 @@ class BouncyButtonInteraction {
         other.splashFactory == splashFactory &&
         other.hoverColor == hoverColor &&
         other.focusColor == focusColor &&
-        other.hoverLift == hoverLift;
+        other.hoverLift == hoverLift &&
+        other.enableSound == enableSound &&
+        other.onPressSound == onPressSound;
   }
 
   @override
@@ -118,5 +137,7 @@ class BouncyButtonInteraction {
         hoverColor,
         focusColor,
         hoverLift,
+        enableSound,
+        onPressSound,
       );
 }

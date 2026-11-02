@@ -245,19 +245,22 @@ void main() {
   });
 
   group('checkout', () {
+    /// Scrolls to a field, as the list only builds what is near the screen,
+    /// then types into it.
+    Future<void> type(WidgetTester tester, String label, String text) async {
+      final field = find.widgetWithText(TextFormField, label);
+      await tester.scrollUntilVisible(
+        field,
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.enterText(field, text);
+    }
+
     Future<void> fillForm(WidgetTester tester, {String? card}) async {
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Name on card'),
-        'Ada Lovelace',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Email'),
-        'ada@example.com',
-      );
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Card number'),
-        card ?? '4242 4242 4242 4242',
-      );
+      await type(tester, 'Name on card', 'Ada Lovelace');
+      await type(tester, 'Email', 'ada@example.com');
+      await type(tester, 'Card number', card ?? '4242 4242 4242 4242');
     }
 
     Finder payButton() => find.ancestor(
@@ -339,10 +342,7 @@ void main() {
       expect(find.text(MockFailure.declined.message), findsOneWidget);
       expect(backend.charges, 0);
 
-      await tester.enterText(
-        find.widgetWithText(TextFormField, 'Card number'),
-        '4242 4242 4242 4242',
-      );
+      await type(tester, 'Card number', '4242 4242 4242 4242');
       await tapPay(tester);
       await tester.pumpAndSettle();
       expect(backend.charges, 1);
@@ -361,6 +361,22 @@ void main() {
       await tapPay(tester);
       await tester.pumpAndSettle();
       expect(backend.charges, 1);
+    });
+
+    testWidgets('express delivery is added to the total', (tester) async {
+      await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await tester.scrollUntilVisible(
+        find.text('Express'),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      expect(find.text('Express delivery'), findsNothing);
+      await tester.tap(find.text('Express'));
+      await tester.pumpAndSettle();
+      expect(find.text('Express delivery'), findsOneWidget);
+      // 129.00 + 2 x 32.00 + 9.99
+      expect(find.text('Pay \$202.99'), findsOneWidget);
     });
 
     testWidgets('a promo code applies a discount', (tester) async {

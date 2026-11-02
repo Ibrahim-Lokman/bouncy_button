@@ -10,6 +10,7 @@ class DemoSettings extends ChangeNotifier {
     bool rtl = false,
     bool reduceMotion = false,
     bool haptics = true,
+    bool sound = false,
     Duration latency = const Duration(milliseconds: 800),
     double failureRate = 0.0,
     bool offline = false,
@@ -19,6 +20,7 @@ class DemoSettings extends ChangeNotifier {
         _rtl = rtl,
         _reduceMotion = reduceMotion,
         _haptics = haptics,
+        _sound = sound,
         _latency = latency,
         _failureRate = failureRate,
         _offline = offline,
@@ -29,6 +31,7 @@ class DemoSettings extends ChangeNotifier {
   bool _rtl;
   bool _reduceMotion;
   bool _haptics;
+  bool _sound;
   Duration _latency;
   double _failureRate;
   bool _offline;
@@ -50,6 +53,10 @@ class DemoSettings extends ChangeNotifier {
 
   bool get haptics => _haptics;
   set haptics(bool value) => _update(() => _haptics = value);
+
+  /// Plays the system click on presses, where the platform has one.
+  bool get sound => _sound;
+  set sound(bool value) => _update(() => _sound = value);
 
   /// How long each mock request takes.
   Duration get latency => _latency;

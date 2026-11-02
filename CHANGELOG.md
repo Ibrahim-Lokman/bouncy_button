@@ -52,6 +52,9 @@
 - `BouncyPressSpring` and `BouncyButtonAnimation.spring`, for spring physics. Pressing again mid-release reverses smoothly from wherever the button is, keeping its speed. Includes `snappy`, `bouncy`, and `gentle` springs and a `BouncyButtonAnimation.springy` preset. Also on `BouncyPressable.spring`.
 - Hover lift: with a mouse, the face rises slightly while hovered. Set the height with `BouncyButtonInteraction.hoverLift`, or 0 to turn it off. Reduced motion turns it off.
 - `BouncyButtonStyle.pressedBorderRadius`, which morphs the corners as the button is pressed, such as from a pill or circle to a rounded square.
+- `BouncyButtonGroup` and `BouncyButtonSegment`, a row of connected buttons for choosing one option or several. Only the outer corners are rounded, on the correct sides in right-to-left layouts, and screen readers announce which segments are selected.
+- `BouncyButtonFill.glass` and `BouncyButtonStyle.glass`, a translucent, blurred face with no depth. It turns solid when the system high contrast setting is on.
+- Press sounds: `BouncyButtonInteraction.enableSound` plays the system click where the platform has one, and `onPressSound` plays your own. Also on `BouncyPressable`.
 - `BouncyButton.tertiary`, using `BouncyButtonTheme.tertiaryStyle`.
 - `BouncyButton.onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`.
 - `BouncyButtonStyle.foregroundColor`.

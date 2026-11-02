@@ -36,6 +36,12 @@ enum BouncyButtonFill {
 
   /// No face or depth, only colored text, for the least prominent actions.
   ghost,
+
+  /// A translucent, blurred face over whatever is behind it, with no depth.
+  ///
+  /// Blurring is costly, so avoid it in long lists. With the system high
+  /// contrast setting on, the face is solid instead.
+  glass,
 }
 
 /// Preset button sizes that scale height, depth, padding, and text together.

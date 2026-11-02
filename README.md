@@ -295,6 +295,29 @@ BouncyButtonStyle.simple(
 )
 ```
 
+### Button Groups
+
+`BouncyButtonGroup` is a row of connected buttons for choosing one option, or several with `multiSelect: true`:
+
+```dart
+BouncyButtonGroup<String>(
+  segments: const [
+    BouncyButtonSegment(value: 'day', label: Text('Day')),
+    BouncyButtonSegment(value: 'week', label: Text('Week')),
+    BouncyButtonSegment(value: 'month', label: Text('Month')),
+  ],
+  selected: {view},
+  onSelectionChanged: (selection) => setState(() => view = selection.first),
+)
+```
+
+Selected segments are filled and the rest tonal. Change them with `style` and `selectedStyle`. For icon-only segments, set `semanticLabel` so screen readers can name them.
+
+### Glass and Sound
+
+- **Glass:** `BouncyButtonStyle.glass` gives a translucent, blurred face over whatever is behind it. It has no depth, and turns solid when the system high contrast setting is on. Blurring is costly, so avoid it in long lists.
+- **Sound:** `BouncyButtonInteraction(enableSound: true)` plays the system click on each press. The platform may have no such sound, the device's sound settings can silence it, and web plays nothing. For a sound that plays everywhere, pass `onPressSound` and play your own with an audio package.
+
 ### Async Actions
 
 `onPressedAsync` shows a spinner until the returned future completes, then a check mark, or an error icon with a shake if it throws. The button ignores presses until it's ready again, so a form or payment can't be sent twice:

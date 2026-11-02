@@ -30,6 +30,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   final Map<String, int> _quantities = {'headphones': 1, 'mug': 2};
   int _discountPercent = 0;
+  String _delivery = 'standard';
+
+  static const int _expressCents = 999;
   String? _promoError;
   String? _orderId;
   String? _payError;
@@ -53,7 +56,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   int get _discount => _subtotal * _discountPercent ~/ 100;
 
-  int get _total => _subtotal - _discount;
+  int get _deliveryCents => _delivery == 'express' ? _expressCents : 0;
+
+  int get _total => _subtotal - _discount + _deliveryCents;
 
   void _changeQuantity(String id, int delta) {
     setState(() {
@@ -117,6 +122,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     setState(() {
       _orderId = null;
       _discountPercent = 0;
+      _delivery = 'standard';
       _promoError = null;
       _payError = null;
     });
@@ -137,25 +143,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              if (_orderId != null)
-                Card(
-                  color: theme.colorScheme.secondaryContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Order $_orderId placed',
-                            style: textTheme.titleMedium),
-                        const SizedBox(height: 12),
-                        BouncyButton.tertiary(
-                          onPressed: _newOrder,
-                          child: const Text('Start a new order'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               Text('Your cart', style: textTheme.titleLarge),
               const SizedBox(height: 8),
               for (final id in _quantities.keys) _cartLine(id),
@@ -182,8 +169,30 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              Text('Delivery', style: textTheme.titleMedium),
+              const SizedBox(height: 8),
+              BouncyButtonGroup<String>(
+                segments: const [
+                  BouncyButtonSegment(
+                    value: 'standard',
+                    icon: Icon(Icons.local_shipping_outlined),
+                    label: Text('Standard'),
+                  ),
+                  BouncyButtonSegment(
+                    value: 'express',
+                    icon: Icon(Icons.bolt),
+                    label: Text('Express'),
+                  ),
+                ],
+                selected: {_delivery},
+                onSelectionChanged: (selection) =>
+                    setState(() => _delivery = selection.first),
+              ),
+              const SizedBox(height: 16),
               _totalLine('Subtotal', _subtotal),
               if (_discount > 0) _totalLine('Discount', -_discount),
+              if (_deliveryCents > 0)
+                _totalLine('Express delivery', _deliveryCents),
               _totalLine('Total', _total, bold: true),
               const Divider(height: 32),
               Text('Payment', style: textTheme.titleLarge),
@@ -228,6 +237,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 child: Text('Pay ${formatPrice(_total)}'),
               ),
+              // Under the button, where the person who pressed it is looking.
+              if (_orderId != null)
+                Card(
+                  margin: const EdgeInsets.only(top: 12),
+                  color: theme.colorScheme.secondaryContainer,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Order $_orderId placed',
+                            style: textTheme.titleMedium),
+                        const SizedBox(height: 12),
+                        BouncyButton.tertiary(
+                          onPressed: _newOrder,
+                          child: const Text('Start a new order'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               if (_payError != null)
                 Padding(
                   padding: const EdgeInsets.only(top: 12),

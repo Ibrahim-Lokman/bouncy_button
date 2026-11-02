@@ -421,6 +421,15 @@ class BouncyButtonStyle {
     fill: BouncyButtonFill.ghost,
   );
 
+  /// Glass style: a translucent, blurred face with no depth.
+  static const BouncyButtonStyle glass = BouncyButtonStyle(
+    height: 48,
+    elevation: 0,
+    borderRadius: BorderRadius.all(Radius.circular(16)),
+    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    fill: BouncyButtonFill.glass,
+  );
+
   /// Circular button style for icon buttons.
   static const BouncyButtonStyle circle = BouncyButtonStyle(
     height: 56,

@@ -39,6 +39,7 @@ class _BouncyDemoAppState extends State<BouncyDemoApp> {
         BouncyButtonTheme(
           defaultInteraction: BouncyButtonInteraction(
             enableHapticFeedback: _settings.haptics,
+            enableSound: _settings.sound,
           ),
         ),
       ],

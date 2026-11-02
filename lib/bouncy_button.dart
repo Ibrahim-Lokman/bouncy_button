@@ -2,6 +2,7 @@ library;
 
 // Export the main widgets
 export 'src/bouncy_button_widget.dart';
+export 'src/button_group.dart';
 export 'src/exclusive_scope.dart' show BouncyExclusiveScope;
 export 'src/pressable.dart';
 

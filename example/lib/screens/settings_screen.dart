@@ -112,6 +112,14 @@ class SettingsScreen extends StatelessWidget {
           value: settings.haptics,
           onChanged: (value) => settings.haptics = value,
         ),
+        SwitchListTile(
+          title: const Text('Press sound'),
+          subtitle: const Text(
+            'The system click, where the platform has one. Web is silent.',
+          ),
+          value: settings.sound,
+          onChanged: (value) => settings.sound = value,
+        ),
       ],
     );
   }

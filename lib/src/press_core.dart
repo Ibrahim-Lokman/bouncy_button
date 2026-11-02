@@ -90,6 +90,8 @@ class PressCore extends StatefulWidget {
     this.semanticValue,
     this.spring,
     this.onHoverChange,
+    this.enableSound = false,
+    this.onPressSound,
   });
 
   /// Builds the control. Called when state changes, not on animation frames.
@@ -172,6 +174,12 @@ class PressCore extends StatefulWidget {
   /// Called when the hover highlight starts or stops: only for a mouse, and
   /// only while enabled.
   final ValueChanged<bool>? onHoverChange;
+
+  /// Whether to play the system click sound on a press.
+  final bool enableSound;
+
+  /// Called on a press to play a sound of your own.
+  final VoidCallback? onPressSound;
 
   @override
   State<PressCore> createState() => _PressCoreState();
@@ -436,6 +444,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     _driveDown();
     if (withHaptics) {
       _provideHapticFeedback();
+      _playSound();
     }
     return true;
   }
@@ -472,6 +481,13 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       }
     }
     onTap();
+  }
+
+  void _playSound() {
+    if (widget.enableSound) {
+      SystemSound.play(SystemSoundType.click);
+    }
+    widget.onPressSound?.call();
   }
 
   void _provideHapticFeedback() {

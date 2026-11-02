@@ -38,6 +38,8 @@ class BouncyPressable extends StatelessWidget {
     this.reverseCurve,
     this.spring,
     this.haptic,
+    this.enableSound = false,
+    this.onPressSound,
     this.cursor,
     this.hitTestBehavior,
     this.focusNode,
@@ -97,6 +99,13 @@ class BouncyPressable extends StatelessWidget {
   /// Haptic feedback for a press. Off by default.
   final HapticFeedbackType? haptic;
 
+  /// Whether to play the system click sound on a press. The platform may
+  /// have no such sound, and web plays nothing.
+  final bool enableSound;
+
+  /// Called on a press, to play a sound of your own.
+  final VoidCallback? onPressSound;
+
   /// The mouse cursor. Defaults to a click cursor when enabled.
   final MouseCursor? cursor;
 
@@ -140,6 +149,8 @@ class BouncyPressable extends StatelessWidget {
       reverseCurve: reverseCurve,
       spring: spring,
       haptic: haptic,
+      enableSound: enableSound,
+      onPressSound: onPressSound,
       cursor: cursor,
       hitTestBehavior: hitTestBehavior,
       focusNode: focusNode,

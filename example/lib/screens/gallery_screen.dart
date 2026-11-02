@@ -16,6 +16,8 @@ class GalleryScreen extends StatefulWidget {
 class _GalleryScreenState extends State<GalleryScreen> {
   bool _toggleEnabled = true;
   bool _externalLoading = false;
+  Set<String> _view = {'week'};
+  Set<String> _formats = {'bold'};
 
   VoidCallback _log(String name) =>
       () => DemoScope.read(context).log.add('$name pressed');
@@ -38,6 +40,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _states(),
         _async(),
         _interactions(),
+        _groups(),
+        _glass(),
         _pressables(),
         _themed(context),
         _colorUtilities(),
@@ -668,6 +672,117 @@ class _GalleryScreenState extends State<GalleryScreen> {
               ),
             ],
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _groups() {
+    return DemoSection(
+      title: 'BouncyButtonGroup',
+      subtitle: 'Connected buttons for choosing one option, or several.',
+      children: [
+        BouncyButtonGroup<String>(
+          segments: const [
+            BouncyButtonSegment(value: 'day', label: Text('Day')),
+            BouncyButtonSegment(value: 'week', label: Text('Week')),
+            BouncyButtonSegment(value: 'month', label: Text('Month')),
+          ],
+          selected: _view,
+          onSelectionChanged: (selection) {
+            setState(() => _view = selection);
+            DemoScope.read(context).log.add('View: ${selection.join(', ')}');
+          },
+        ),
+        BouncyButtonGroup<String>(
+          multiSelect: true,
+          emptySelectionAllowed: true,
+          expand: false,
+          style: BouncyButtonStyle.fromSize(BouncyButtonSize.small)
+              .copyWith(fill: BouncyButtonFill.outlined),
+          segments: const [
+            BouncyButtonSegment(
+              value: 'bold',
+              icon: Icon(Icons.format_bold),
+              semanticLabel: 'Bold',
+            ),
+            BouncyButtonSegment(
+              value: 'italic',
+              icon: Icon(Icons.format_italic),
+              semanticLabel: 'Italic',
+            ),
+            BouncyButtonSegment(
+              value: 'underline',
+              icon: Icon(Icons.format_underline),
+              semanticLabel: 'Underline',
+            ),
+          ],
+          selected: _formats,
+          onSelectionChanged: (selection) {
+            setState(() => _formats = selection);
+            DemoScope.read(context).log.add(
+                'Formats: ${selection.isEmpty ? 'none' : selection.join(', ')}');
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _glass() {
+    return DemoSection(
+      title: 'Glass',
+      subtitle: 'A translucent, blurred face. It turns solid with the high '
+          'contrast setting, and is best kept out of long lists.',
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFFFF6F61),
+                  Color(0xFF6A1B9A),
+                  Color(0xFF00897B)
+                ],
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  BouncyButton(
+                    onPressed: _log('Glass'),
+                    style: BouncyButtonStyle.glass,
+                    leading: const Icon(Icons.play_arrow),
+                    child: const Text('Glass'),
+                  ),
+                  BouncyButton(
+                    onPressed: _log('Glass tinted'),
+                    style: BouncyButtonStyle.glass.copyWith(
+                      backgroundColor: Colors.black,
+                    ),
+                    child: const Text('Tinted'),
+                  ),
+                  BouncyButton(
+                    onPressed: _log('Glass circle'),
+                    semanticLabel: 'Glass circle',
+                    style: BouncyButtonStyle.circle.copyWith(
+                      fill: BouncyButtonFill.glass,
+                    ),
+                    child: const Icon(Icons.favorite),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        BouncyButton(
+          onPressed: _log('Sound'),
+          interaction: const BouncyButtonInteraction(enableSound: true),
+          leading: const Icon(Icons.volume_up),
+          child: const Text('Press sound'),
         ),
       ],
     );
