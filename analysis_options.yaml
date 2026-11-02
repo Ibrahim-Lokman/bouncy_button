@@ -18,5 +18,6 @@ linter:
 analyzer:
   exclude:
     - example/**
+    - build/**
   errors:
     todo: ignore
