@@ -830,6 +830,12 @@ void main() {
       'lib/src/pressable.dart',
       'lib/src/exclusive_scope.dart',
       'lib/src/press_core.dart',
+      'lib/src/async_builder.dart',
+      'lib/src/async_action.dart',
+      'lib/src/controller.dart',
+      'lib/src/feedback.dart',
+      'lib/src/enums.dart',
+      'lib/src/spring.dart',
     ];
     for (final path in files) {
       final source = File(path).readAsStringSync();

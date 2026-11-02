@@ -25,4 +25,30 @@ void main() {
     expect(taps, 1);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('BouncyAsyncBuilder works with no Material ancestors',
+      (tester) async {
+    var runs = 0;
+    await tester.pumpWidget(
+      WidgetsApp(
+        color: const Color(0xFF000000),
+        builder: (context, _) => Center(
+          child: BouncyAsyncBuilder(
+            onPressed: () async => runs++,
+            cooldown: const Duration(milliseconds: 300),
+            builder: (context, onPressed, status) => GestureDetector(
+              onTap: onPressed,
+              child: Text(status.name),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('idle'));
+    await tester.pump();
+    expect(runs, 1);
+    await tester.pumpAndSettle();
+    expect(find.text('idle'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

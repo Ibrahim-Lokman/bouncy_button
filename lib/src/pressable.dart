@@ -48,6 +48,7 @@ class BouncyPressable extends StatelessWidget {
     this.focusBorderRadius = const BorderRadius.all(Radius.circular(8)),
     this.semanticLabel,
     this.semanticsButton = true,
+    this.cooldown,
   }) : assert(
           scaleFactor >= 0.0 && scaleFactor <= 1.0,
           'scaleFactor must be between 0.0 and 1.0.',
@@ -134,6 +135,10 @@ class BouncyPressable extends StatelessWidget {
   /// stay separately reachable.
   final bool semanticsButton;
 
+  /// How long to ignore presses after [onTap] or [onLongPress] runs, so a
+  /// quick double tap doesn't run it twice.
+  final Duration? cooldown;
+
   @override
   Widget build(BuildContext context) {
     return PressCore(
@@ -157,6 +162,7 @@ class BouncyPressable extends StatelessWidget {
       autofocus: autofocus,
       semanticLabel: semanticLabel,
       semanticsButton: semanticsButton,
+      cooldown: cooldown,
       builder: (context, press) {
         return AnimatedBuilder(
           animation: press.animation,

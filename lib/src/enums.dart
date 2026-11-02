@@ -56,6 +56,31 @@ enum BouncyButtonSize {
   large,
 }
 
+/// What an async button is showing.
+enum BouncyButtonStatus {
+  /// Ready to be pressed.
+  idle,
+
+  /// Waiting for the action to finish, or `isLoading` is true.
+  loading,
+
+  /// The action finished. Shown for `BouncyButtonFeedback.resultDuration`.
+  success,
+
+  /// The action threw. Shown for `BouncyButtonFeedback.resultDuration`.
+  error,
+}
+
+/// The meaning of a button, which can change its colors.
+enum BouncyButtonTone {
+  /// No special meaning.
+  normal,
+
+  /// The action destroys or removes something, such as deleting a file. Uses
+  /// the theme's error colors.
+  destructive,
+}
+
 /// Haptic feedback types.
 enum HapticFeedbackType {
   /// Light impact feedback.

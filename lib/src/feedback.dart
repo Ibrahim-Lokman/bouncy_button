@@ -1,19 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
-/// What an async button is showing.
-enum BouncyButtonStatus {
-  /// Ready to be pressed.
-  idle,
-
-  /// Waiting for `onPressedAsync` to finish, or `isLoading` is true.
-  loading,
-
-  /// `onPressedAsync` finished. Shown for [BouncyButtonFeedback.resultDuration].
-  success,
-
-  /// `onPressedAsync` threw. Shown for [BouncyButtonFeedback.resultDuration].
-  error,
-}
+import 'enums.dart';
 
 /// How a button shows loading, success, and error.
 ///
@@ -34,6 +21,8 @@ class BouncyButtonFeedback {
     this.loadingLabel = 'Loading',
     this.successLabel = 'Done',
     this.errorLabel = 'Failed',
+    this.minLoadingDuration = Duration.zero,
+    this.loadingText,
   });
 
   /// Builds the loading indicator. Defaults to a small progress spinner.
@@ -67,10 +56,23 @@ class BouncyButtonFeedback {
   /// Read by screen readers on error. Translate it for your app.
   final String errorLabel;
 
+  /// The shortest time loading is shown, even if the action finishes sooner.
+  ///
+  /// A very fast action otherwise makes the spinner flash for a moment, which
+  /// can look like a glitch. Around 400 milliseconds avoids that.
+  final Duration minLoadingDuration;
+
+  /// Text shown beside the spinner while loading, such as "Saving…".
+  ///
+  /// Screen readers also read it in place of [loadingLabel]. The button keeps
+  /// its size while loading, so text longer than the label is cut off with an
+  /// ellipsis. Not used when [loadingBuilder] is set.
+  final String? loadingText;
+
   /// Returns the screen reader label for [status], or null when idle.
   String? labelFor(BouncyButtonStatus status) => switch (status) {
         BouncyButtonStatus.idle => null,
-        BouncyButtonStatus.loading => loadingLabel,
+        BouncyButtonStatus.loading => loadingText ?? loadingLabel,
         BouncyButtonStatus.success => successLabel,
         BouncyButtonStatus.error => errorLabel,
       };
@@ -87,6 +89,8 @@ class BouncyButtonFeedback {
     String? loadingLabel,
     String? successLabel,
     String? errorLabel,
+    Duration? minLoadingDuration,
+    String? loadingText,
   }) {
     return BouncyButtonFeedback(
       loadingBuilder: loadingBuilder ?? this.loadingBuilder,
@@ -99,6 +103,8 @@ class BouncyButtonFeedback {
       loadingLabel: loadingLabel ?? this.loadingLabel,
       successLabel: successLabel ?? this.successLabel,
       errorLabel: errorLabel ?? this.errorLabel,
+      minLoadingDuration: minLoadingDuration ?? this.minLoadingDuration,
+      loadingText: loadingText ?? this.loadingText,
     );
   }
 
@@ -117,7 +123,9 @@ class BouncyButtonFeedback {
         other.resultDuration == resultDuration &&
         other.loadingLabel == loadingLabel &&
         other.successLabel == successLabel &&
-        other.errorLabel == errorLabel;
+        other.errorLabel == errorLabel &&
+        other.minLoadingDuration == minLoadingDuration &&
+        other.loadingText == loadingText;
   }
 
   @override
@@ -132,5 +140,7 @@ class BouncyButtonFeedback {
         loadingLabel,
         successLabel,
         errorLabel,
+        minLoadingDuration,
+        loadingText,
       );
 }

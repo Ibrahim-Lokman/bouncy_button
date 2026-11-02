@@ -1,3 +1,19 @@
+## [2.1.0] - Unreleased
+
+### Added
+
+- `cooldown` on `BouncyButton` and `BouncyPressable`, which ignores presses for a while after the button is used, so a quick double tap doesn't run an action twice. For `onPressedAsync`, it starts once the button is ready again, and errors count too.
+- `BouncyAsyncBuilder`, which adds double-tap protection and loading, success, and error states to any button, including Material and Cupertino ones. It needs no Material code and is also exported from `package:bouncy_button/pressable.dart`.
+- `BouncyButtonController`, to press or reset a button from code and follow its status.
+- `BouncyExclusiveScope.lockDuringLoading`, which lets only one async action below it run at a time.
+- `BouncyButtonFeedback.minLoadingDuration`, so a very fast action doesn't flash the spinner.
+- `BouncyButtonFeedback.loadingText`, shown beside the spinner and read by screen readers.
+- `BouncyButton.tooltip`.
+
+### Changed
+
+- `BouncyButtonStatus` moved to the library's enums, so it is available without Material. Imports of `package:bouncy_button/bouncy_button.dart` are unaffected.
+
 ## [2.0.0] - 2026-11-02
 
 ### Breaking changes

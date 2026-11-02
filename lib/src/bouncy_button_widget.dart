@@ -3,6 +3,8 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'async_action.dart';
+import 'controller.dart';
 import 'enums.dart';
 import 'feedback.dart';
 import 'styles.dart';
@@ -45,6 +47,9 @@ class BouncyButton extends StatefulWidget {
     this.onError,
     this.isLoading,
     this.feedback,
+    this.cooldown,
+    this.controller,
+    this.tooltip,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -79,6 +84,9 @@ class BouncyButton extends StatefulWidget {
     this.onError,
     this.isLoading,
     this.feedback,
+    this.cooldown,
+    this.controller,
+    this.tooltip,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -113,6 +121,9 @@ class BouncyButton extends StatefulWidget {
     this.onError,
     this.isLoading,
     this.feedback,
+    this.cooldown,
+    this.controller,
+    this.tooltip,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -147,6 +158,9 @@ class BouncyButton extends StatefulWidget {
     this.onError,
     this.isLoading,
     this.feedback,
+    this.cooldown,
+    this.controller,
+    this.tooltip,
     this.onLongPress,
     this.onTapDown,
     this.onTapUp,
@@ -211,6 +225,30 @@ class BouncyButton extends StatefulWidget {
   /// How the button shows loading, success, and error. If null,
   /// [BouncyButtonTheme.defaultFeedback] is used.
   final BouncyButtonFeedback? feedback;
+
+  /// How long to ignore presses after the button is used, so a quick double
+  /// tap doesn't run the action twice.
+  ///
+  /// For [onPressed], it starts when the button is tapped. For
+  /// [onPressedAsync], it starts when the button is ready again, after any
+  /// success or error has been shown. Errors count too. During the cooldown
+  /// the button looks normal but ignores presses.
+  ///
+  /// ```dart
+  /// BouncyButton(
+  ///   onPressed: () => Navigator.of(context).push(route),
+  ///   cooldown: const Duration(milliseconds: 600),
+  ///   child: const Text('Open'),
+  /// )
+  /// ```
+  final Duration? cooldown;
+
+  /// Controls the button from code: press it, reset it, or follow its status.
+  final BouncyButtonController? controller;
+
+  /// A short description shown on hover or long press, and given to screen
+  /// readers. Use it for buttons that only have an icon.
+  final String? tooltip;
 
   /// Called when the button is long-pressed.
   final VoidCallback? onLongPress;
@@ -287,20 +325,8 @@ class BouncyButton extends StatefulWidget {
 }
 
 class _BouncyButtonState extends State<BouncyButton>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, AsyncActionRunner<BouncyButton> {
   static const Duration _shakeDuration = Duration(milliseconds: 450);
-
-  BouncyButtonStatus _asyncStatus = BouncyButtonStatus.idle;
-
-  /// Identifies the latest async run, so that an earlier one that finishes
-  /// late can't change what the button shows.
-  int _run = 0;
-
-  /// Holds success or error on screen, then returns to idle. An animation
-  /// rather than a timer, so that tests can wait for it with pumpAndSettle.
-  late final AnimationController _resultHold = AnimationController(
-    vsync: this,
-  )..addStatusListener(_handleResultHoldStatus);
 
   /// Raises the face while a mouse hovers.
   late final AnimationController _hover = AnimationController(
@@ -313,14 +339,21 @@ class _BouncyButtonState extends State<BouncyButton>
     duration: _shakeDuration,
   );
 
+  /// Whether another action in a locking scope is running. Set in [build].
+  bool _groupLocked = false;
+
+  /// The core's keyboard-style activation, for [press]. Set in [build].
+  VoidCallback? _coreActivate;
+
+  /// The run started by the latest activation, for [press].
+  Future<void>? _lastRun;
+
   bool get _isEnabled =>
       widget.enabled &&
+      !_groupLocked &&
       (widget.onPressed != null ||
           widget.onPressedAsync != null ||
           widget.onLongPress != null);
-
-  BouncyButtonStatus get _status =>
-      widget.isLoading ?? false ? BouncyButtonStatus.loading : _asyncStatus;
 
   BouncyButtonFeedback get _feedback =>
       widget.feedback ??
@@ -328,76 +361,74 @@ class _BouncyButtonState extends State<BouncyButton>
       const BouncyButtonFeedback();
 
   @override
+  Future<void> Function()? get asyncAction => widget.onPressedAsync;
+
+  @override
+  void Function(Object error, StackTrace stackTrace)? get asyncOnError =>
+      widget.onError;
+
+  @override
+  String get asyncErrorContext => 'while running BouncyButton.onPressedAsync';
+
+  @override
+  BouncyButtonFeedback get asyncFeedback => _feedback;
+
+  @override
+  Duration? get asyncCooldown => widget.cooldown;
+
+  @override
+  BouncyButtonController? get asyncController => widget.controller;
+
+  @override
+  bool get externalLoading => widget.isLoading ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    syncAsyncController();
+  }
+
+  @override
+  void didUpdateWidget(BouncyButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    syncAsyncController(oldWidget.controller);
+    if (oldWidget.isLoading != widget.isLoading) {
+      widget.controller?.notifyStatus();
+    }
+  }
+
+  @override
   void dispose() {
-    _resultHold.dispose();
+    disposeAsyncAction();
     _shake.dispose();
     _hover.dispose();
     super.dispose();
   }
 
-  void _handleResultHoldStatus(AnimationStatus status) {
-    if (status == AnimationStatus.completed && mounted) {
-      setState(() => _asyncStatus = BouncyButtonStatus.idle);
-    }
+  void _runFromTap() {
+    _lastRun = runAsyncAction();
   }
 
-  Future<void> _runAsync() async {
-    final callback = widget.onPressedAsync;
-    if (callback == null || _status != BouncyButtonStatus.idle) {
-      return;
+  @override
+  Future<void> press() {
+    if (widget.onPressedAsync != null && status == BouncyButtonStatus.loading) {
+      return runAsyncAction();
     }
-    final run = ++_run;
-    setState(() => _asyncStatus = BouncyButtonStatus.loading);
-    try {
-      // Called inside the try, so a synchronous throw is caught too.
-      await callback();
-    } catch (error, stackTrace) {
-      _reportError(error, stackTrace);
-      if (mounted && run == _run) {
-        _showResult(BouncyButtonStatus.error);
-      }
-      return;
-    }
-    if (mounted && run == _run) {
-      _showResult(BouncyButtonStatus.success);
-    }
+    _lastRun = null;
+    _coreActivate?.call();
+    return _lastRun ?? Future<void>.value();
   }
 
-  void _reportError(Object error, StackTrace stackTrace) {
-    final onError = widget.onError;
-    if (onError != null) {
-      onError(error, stackTrace);
-      return;
-    }
-    FlutterError.reportError(
-      FlutterErrorDetails(
-        exception: error,
-        stack: stackTrace,
-        library: 'bouncy_button',
-        context: ErrorDescription('while running BouncyButton.onPressedAsync'),
-      ),
-    );
-  }
-
-  void _showResult(BouncyButtonStatus status) {
-    final feedback = _feedback;
-    final interaction = _interaction;
-    final success = status == BouncyButtonStatus.success;
-    if (!(success ? feedback.showSuccess : feedback.showError)) {
-      setState(() => _asyncStatus = BouncyButtonStatus.idle);
-      return;
-    }
-    setState(() => _asyncStatus = status);
-    if (interaction.enableHapticFeedback) {
+  @override
+  void onAsyncResult(BouncyButtonStatus result) {
+    final success = result == BouncyButtonStatus.success;
+    if (_interaction.enableHapticFeedback) {
       success ? HapticFeedback.selectionClick() : HapticFeedback.heavyImpact();
     }
     final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    if (!success && feedback.shakeOnError && !reduceMotion) {
+    if (!success && _feedback.shakeOnError && !reduceMotion) {
       _shake.forward(from: 0);
     }
-    _resultHold
-      ..duration = feedback.resultDuration
-      ..forward(from: 0);
   }
 
   void _handleHover(bool hovered) {
@@ -718,7 +749,7 @@ class _BouncyButtonState extends State<BouncyButton>
               child: _withIcons(),
             ),
           );
-    final status = _status;
+    final status = this.status;
     final showContent = status == BouncyButtonStatus.idle;
     // The content stays laid out while hidden, so the button keeps its size.
     return Stack(
@@ -777,11 +808,34 @@ class _BouncyButtonState extends State<BouncyButton>
         if (builder != null) {
           return builder(context);
         }
-        return SizedBox.square(
+        final spinner = SizedBox.square(
           dimension: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
             color: IconTheme.of(context).color,
+          ),
+        );
+        final text = feedback.loadingText;
+        if (text == null) {
+          return spinner;
+        }
+        // The button keeps its size, so longer text is cut off.
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              spinner,
+              SizedBox(width: widget.gap),
+              Flexible(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  softWrap: false,
+                ),
+              ),
+            ],
           ),
         );
       case BouncyButtonStatus.success:
@@ -1009,17 +1063,20 @@ class _BouncyButtonState extends State<BouncyButton>
     final interaction = _interaction;
     final animation = _animationConfig;
 
-    final status = _status;
+    final isAsync = widget.onPressedAsync != null;
+    _groupLocked = isAsync && watchGroupLock(context);
     Widget button = PressCore(
-      onTap: widget.onPressed ??
-          (widget.onPressedAsync != null ? _runAsync : null),
-      busy: status != BouncyButtonStatus.idle,
+      onTap: widget.onPressed ?? (isAsync ? _runFromTap : null),
+      busy: asyncBusy,
       semanticValue: _feedback.labelFor(status),
+      // Async buttons cool down once they are ready again, through the runner.
+      cooldown: isAsync ? null : widget.cooldown,
+      tooltip: widget.tooltip,
       onLongPress: widget.onLongPress,
       onTapDown: widget.onTapDown,
       onTapUp: widget.onTapUp,
       onTapCancel: widget.onTapCancel,
-      enabled: widget.enabled,
+      enabled: widget.enabled && !_groupLocked,
       duration: animation.duration,
       reverseDuration: animation.reverseDuration,
       curve: animation.curve,
@@ -1037,9 +1094,21 @@ class _BouncyButtonState extends State<BouncyButton>
       autofocus: widget.autofocus,
       semanticLabel: widget.semanticLabel,
       labelReplacesChildSemantics: true,
-      builder: (context, press) =>
-          _buildBody(context, style, interaction, animation, press),
+      builder: (context, press) {
+        _coreActivate = press.handleActivate;
+        return _buildBody(context, style, interaction, animation, press);
+      },
     );
+
+    final tooltip = widget.tooltip;
+    if (tooltip != null) {
+      // The core gives screen readers the tooltip, so this one doesn't.
+      button = Tooltip(
+        message: tooltip,
+        excludeFromSemantics: true,
+        child: button,
+      );
+    }
 
     if (style.margin != null) {
       button = Padding(padding: style.margin!, child: button);

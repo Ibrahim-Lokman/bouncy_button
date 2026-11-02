@@ -25,6 +25,7 @@ class PressCoreData {
     required this.handleTapDown,
     required this.handleTapUp,
     required this.handleTapCancel,
+    required this.handleActivate,
   });
 
   /// The press animation.
@@ -57,6 +58,10 @@ class PressCoreData {
 
   /// See [handleTap].
   final VoidCallback handleTapCancel;
+
+  /// Activates the control as the keyboard does: runs the tap callback with
+  /// the press animation. Ignored while disabled, busy, or cooling down.
+  final VoidCallback handleActivate;
 }
 
 /// The press behavior shared by every widget in this package: gestures, press
@@ -92,6 +97,8 @@ class PressCore extends StatefulWidget {
     this.onHoverChange,
     this.enableSound = false,
     this.onPressSound,
+    this.cooldown,
+    this.tooltip,
   });
 
   /// Builds the control. Called when state changes, not on animation frames.
@@ -181,6 +188,12 @@ class PressCore extends StatefulWidget {
   /// Called on a press to play a sound of your own.
   final VoidCallback? onPressSound;
 
+  /// How long to ignore presses after [onTap] or [onLongPress] runs.
+  final Duration? cooldown;
+
+  /// A short description, given to screen readers as the tooltip.
+  final String? tooltip;
+
   @override
   State<PressCore> createState() => _PressCoreState();
 }
@@ -222,6 +235,15 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
   /// Set when a press was released before it finished going down. The release
   /// then waits, so a quick tap still shows the whole press.
   bool _releasePending = false;
+
+  /// Runs while presses are ignored after an action. An animation rather than
+  /// a timer, so that tests can wait for it with pumpAndSettle.
+  AnimationController? _cooldown;
+
+  bool get _coolingDown => _cooldown?.isAnimating ?? false;
+
+  /// Whether presses are being ignored for now.
+  bool get _ignoringPresses => widget.busy || _coolingDown;
 
   bool get _isEnabled =>
       widget.enabled && (widget.onTap != null || widget.onLongPress != null);
@@ -281,6 +303,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     _animation.dispose();
     _controller.dispose();
     _springController?.dispose();
+    _cooldown?.dispose();
     super.dispose();
   }
 
@@ -381,6 +404,16 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     }
   }
 
+  void _startCooldown() {
+    final cooldown = widget.cooldown;
+    if (cooldown == null || cooldown <= Duration.zero) {
+      return;
+    }
+    (_cooldown ??= AnimationController(vsync: this))
+      ..duration = cooldown
+      ..forward(from: 0);
+  }
+
   /// Tells the parent and the exclusive scope that this press is over.
   void _endOwnership() {
     _notifiedParent?._markChild(this, active: false);
@@ -421,7 +454,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
   /// gave it to another control.
   bool _press({bool withHaptics = true}) {
     if (_isPressed ||
-        widget.busy ||
+        _ignoringPresses ||
         _ignoringGesture ||
         _activeChildren.isNotEmpty) {
       return false;
@@ -469,7 +502,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
   /// Handles activation that has no pointer: the keyboard and screen readers.
   void _activate() {
     final onTap = widget.onTap;
-    if (!_isEnabled || widget.busy || onTap == null) {
+    if (!_isEnabled || _ignoringPresses || onTap == null) {
       return;
     }
     if (!_isPressed) {
@@ -481,6 +514,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       }
     }
     onTap();
+    _startCooldown();
   }
 
   void _playSound() {
@@ -529,14 +563,18 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
   }
 
   void _handleTap() {
-    if (_isEnabled && !widget.busy && !_ignoringGesture) {
-      widget.onTap?.call();
+    final onTap = widget.onTap;
+    if (_isEnabled && !_ignoringPresses && !_ignoringGesture && onTap != null) {
+      onTap();
+      _startCooldown();
     }
   }
 
   void _handleLongPress() {
-    if (!widget.busy && !_ignoringGesture) {
-      widget.onLongPress?.call();
+    final onLongPress = widget.onLongPress;
+    if (!_ignoringPresses && !_ignoringGesture && onLongPress != null) {
+      onLongPress();
+      _startCooldown();
     }
   }
 
@@ -554,6 +592,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       explicitChildNodes: !widget.semanticsButton,
       enabled: widget.semanticsButton ? enabled : null,
       label: widget.semanticLabel,
+      tooltip: widget.tooltip,
       value: widget.semanticValue,
       liveRegion: widget.semanticValue != null,
       onTap: hasTap ? _activate : null,
@@ -629,6 +668,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
                     handleTapDown: _handleTapDown,
                     handleTapUp: _handleTapUp,
                     handleTapCancel: _handleTapCancel,
+                    handleActivate: _activate,
                   ),
                 ),
               ),
