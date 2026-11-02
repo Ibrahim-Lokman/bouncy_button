@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 // ============================================================================
 // lib/src/styles.dart
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 ///
 /// This class contains all the visual properties that can be customized
 /// for a [BouncyButton].
+@immutable
 class BouncyButtonStyle {
   /// Creates a button style configuration.
   const BouncyButtonStyle({
@@ -14,6 +16,7 @@ class BouncyButtonStyle {
     this.width,
     this.elevation = 8,
     this.backgroundColor,
+    this.foregroundColor,
     this.disabledColor,
     this.hslColor,
     this.gradient,
@@ -36,10 +39,17 @@ class BouncyButtonStyle {
     this.shadowDecoration,
   });
 
-  /// The height of the button.
+  /// The minimum height of the button face, excluding [elevation].
+  ///
+  /// The face grows past this when its content needs more room, such as with
+  /// large system text sizes. Circular buttons are always exactly this tall.
   final double height;
 
-  /// The width of the button. If null, the button will size itself to its child.
+  /// The width of the button.
+  ///
+  /// If null, the button sizes itself to its child, or fills its parent when
+  /// the parent forces a width (for example inside [Expanded]). Use
+  /// [double.infinity] to fill the available width.
   final double? width;
 
   /// The depth/elevation of the 3D effect.
@@ -48,10 +58,18 @@ class BouncyButtonStyle {
   /// The background color of the button.
   final Color? backgroundColor;
 
+  /// The default color of text and icons inside the button.
+  ///
+  /// If null, a color that contrasts with the button's background is chosen.
+  /// A color set directly on the child takes precedence.
+  final Color? foregroundColor;
+
   /// The color of the button when disabled.
   final Color? disabledColor;
 
-  /// HSL color for automatic shadow generation.
+  /// HSL color for the button face and automatic shadow generation.
+  ///
+  /// Used for the face when [backgroundColor] is null.
   final HSLColor? hslColor;
 
   /// Gradient background for the button.
@@ -114,6 +132,7 @@ class BouncyButtonStyle {
     double? width,
     double? elevation,
     Color? backgroundColor,
+    Color? foregroundColor,
     Color? disabledColor,
     HSLColor? hslColor,
     Gradient? gradient,
@@ -140,6 +159,7 @@ class BouncyButtonStyle {
       width: width ?? this.width,
       elevation: elevation ?? this.elevation,
       backgroundColor: backgroundColor ?? this.backgroundColor,
+      foregroundColor: foregroundColor ?? this.foregroundColor,
       disabledColor: disabledColor ?? this.disabledColor,
       hslColor: hslColor ?? this.hslColor,
       gradient: gradient ?? this.gradient,
@@ -163,6 +183,68 @@ class BouncyButtonStyle {
     );
   }
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is BouncyButtonStyle &&
+        other.height == height &&
+        other.width == width &&
+        other.elevation == elevation &&
+        other.backgroundColor == backgroundColor &&
+        other.foregroundColor == foregroundColor &&
+        other.disabledColor == disabledColor &&
+        other.hslColor == hslColor &&
+        other.gradient == gradient &&
+        other.disabledGradient == disabledGradient &&
+        other.shadow == shadow &&
+        listEquals(other.shadows, shadows) &&
+        other.borderRadius == borderRadius &&
+        other.border == border &&
+        other.shape == shape &&
+        other.padding == padding &&
+        other.margin == margin &&
+        other.shadowColor == shadowColor &&
+        other.shadowDarkness == shadowDarkness &&
+        other.clipBehavior == clipBehavior &&
+        other.opacity == opacity &&
+        other.alignment == alignment &&
+        other.transform == transform &&
+        other.transformAlignment == transformAlignment &&
+        other.decoration == decoration &&
+        other.shadowDecoration == shadowDecoration;
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+        height,
+        width,
+        elevation,
+        backgroundColor,
+        foregroundColor,
+        disabledColor,
+        hslColor,
+        gradient,
+        disabledGradient,
+        shadow,
+        if (shadows != null) Object.hashAll(shadows!),
+        borderRadius,
+        border,
+        shape,
+        padding,
+        margin,
+        shadowColor,
+        shadowDarkness,
+        clipBehavior,
+        opacity,
+        alignment,
+        transform,
+        transformAlignment,
+        decoration,
+        shadowDecoration,
+      ]);
+
   /// Primary button style with standard elevation and padding.
   static const BouncyButtonStyle primary = BouncyButtonStyle(
     height: 56,
@@ -183,7 +265,7 @@ class BouncyButtonStyle {
 
   /// Flat button style with minimal elevation.
   static const BouncyButtonStyle flat = BouncyButtonStyle(
-    height: 44,
+    height: 46,
     elevation: 2,
     shadowDarkness: 0.15,
     borderRadius: BorderRadius.all(Radius.circular(6)),

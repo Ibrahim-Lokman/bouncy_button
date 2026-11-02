@@ -177,7 +177,7 @@ class _BouncyButtonDemoState extends State<BouncyButtonDemo> {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [

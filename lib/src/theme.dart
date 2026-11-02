@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'bouncy_button_widget.dart';
 import 'styles.dart';
 import 'animations.dart';
 import 'interactions.dart';
@@ -9,6 +10,8 @@ import 'interactions.dart';
 /// Theme extension for BouncyButton.
 ///
 /// Allows defining app-wide button styles through the Material Theme system.
+/// A style, animation, or interaction passed directly to a [BouncyButton]
+/// replaces the themed value.
 class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
   /// Creates a button theme.
   const BouncyButtonTheme({
@@ -19,13 +22,14 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
     this.defaultInteraction,
   });
 
-  /// Primary button style.
+  /// Style for [BouncyButton] and [BouncyButton.primary] when they are not
+  /// given a style.
   final BouncyButtonStyle? primaryStyle;
 
-  /// Secondary button style.
+  /// Style for [BouncyButton.secondary] when it is not given a style.
   final BouncyButtonStyle? secondaryStyle;
 
-  /// Tertiary button style.
+  /// Style for [BouncyButton.tertiary] when it is not given a style.
   final BouncyButtonStyle? tertiaryStyle;
 
   /// Default animation configuration.

@@ -6,7 +6,9 @@ import 'enums.dart';
 
 /// Configuration for button interactions.
 ///
-/// This class controls haptic feedback, splash effects, and cursor behavior.
+/// This class controls haptic feedback, splash effects, cursor behavior, and
+/// the hover and keyboard focus highlights.
+@immutable
 class BouncyButtonInteraction {
   /// Creates an interaction configuration.
   const BouncyButtonInteraction({
@@ -17,6 +19,8 @@ class BouncyButtonInteraction {
     this.splashColor,
     this.highlightColor,
     this.splashFactory,
+    this.hoverColor,
+    this.focusColor,
   });
 
   /// Whether to enable haptic feedback.
@@ -40,6 +44,16 @@ class BouncyButtonInteraction {
   /// Custom splash factory.
   final InteractiveInkFeatureFactory? splashFactory;
 
+  /// Overlay color while a mouse hovers over the button.
+  ///
+  /// If null, a faint tint of the button's foreground color is used.
+  final Color? hoverColor;
+
+  /// Color of the ring shown when the button has keyboard focus.
+  ///
+  /// If null, the button's foreground color is used.
+  final Color? focusColor;
+
   /// Creates a copy with modified fields.
   BouncyButtonInteraction copyWith({
     bool? enableHapticFeedback,
@@ -49,6 +63,8 @@ class BouncyButtonInteraction {
     Color? splashColor,
     Color? highlightColor,
     InteractiveInkFeatureFactory? splashFactory,
+    Color? hoverColor,
+    Color? focusColor,
   }) {
     return BouncyButtonInteraction(
       enableHapticFeedback: enableHapticFeedback ?? this.enableHapticFeedback,
@@ -58,6 +74,38 @@ class BouncyButtonInteraction {
       splashColor: splashColor ?? this.splashColor,
       highlightColor: highlightColor ?? this.highlightColor,
       splashFactory: splashFactory ?? this.splashFactory,
+      hoverColor: hoverColor ?? this.hoverColor,
+      focusColor: focusColor ?? this.focusColor,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) {
+      return true;
+    }
+    return other is BouncyButtonInteraction &&
+        other.enableHapticFeedback == enableHapticFeedback &&
+        other.hapticFeedbackType == hapticFeedbackType &&
+        other.cursor == cursor &&
+        other.enableSplash == enableSplash &&
+        other.splashColor == splashColor &&
+        other.highlightColor == highlightColor &&
+        other.splashFactory == splashFactory &&
+        other.hoverColor == hoverColor &&
+        other.focusColor == focusColor;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        enableHapticFeedback,
+        hapticFeedbackType,
+        cursor,
+        enableSplash,
+        splashColor,
+        highlightColor,
+        splashFactory,
+        hoverColor,
+        focusColor,
+      );
 }

@@ -8,10 +8,10 @@ A highly customizable Flutter button widget with engaging 3D depth effects, smoo
 🎨 **Extensive Styling** - Gradients, shadows, borders, and custom decorations  
 🎭 **Multiple Animations** - Depth, scale, rotation, bounce, fade, and slide effects  
 📱 **Haptic Feedback** - Native platform haptic feedback support  
-🎯 **Gesture Support** - Tap, long press, and drag interactions  
-♿ **Accessibility** - Full semantic label and focus support  
-🎨 **Theme Integration** - Seamless integration with Material Theme  
-⚡ **High Performance** - Optimized animations and rendering
+🎯 **Gesture Support** - Tap and long press, with a visible press on even the quickest tap  
+♿ **Accessibility** - Screen reader support, keyboard activation, a focus ring, large text, and the system "reduce motion" setting  
+🎨 **Theme Integration** - App-wide styles through `BouncyButtonTheme`, with legible default colors in light and dark themes  
+🖥️ **Desktop and Web** - Hover highlight, mouse cursor, and keyboard navigation
 
 ## Installation
 
@@ -19,7 +19,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  bouncy_button: //updated_version
+  bouncy_button: ^2.0.0
 ```
 
 Then run:
@@ -30,25 +30,21 @@ flutter pub get
 
 ## Demo
 
-[Link Text](https://github.com/Ibrahim-Lokman/bouncy_button?tab=readme-ov-file#demo)
-
 <div align="center">
-  <img src="gifs/gif_1.gif" alt="Basic and Animated Button Demo" style="width: 100%; max-width: 400px;">
+  <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/gifs/gif_1.gif" alt="Basic and Animated Button Demo" style="width: 100%; max-width: 400px;">
   <br><br>
-  <img src="gifs/gif_2.gif" alt="Styled and Interactive Button Demo" style="width: 100%; max-width: 400px;">
+  <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/gifs/gif_2.gif" alt="Styled and Interactive Button Demo" style="width: 100%; max-width: 400px;">
 </div>
 
 ## Screenshots
 
-[Link Text](https://github.com/Ibrahim-Lokman/bouncy_button?tab=readme-ov-file#screenshots)
-
 ### Light Theme
 
-<img src="screenshots/ss1.png" alt="Basic and Animated Buttons" width="300"> <img src="screenshots/ss2.png" alt="Styled and Icon Buttons" width="300">
+<img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss1.png" alt="Basic and Animated Buttons" width="300"> <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss2.png" alt="Styled and Icon Buttons" width="300">
 
 ### Dark Theme
 
-<img src="screenshots/ss3.png" alt="Animated and Styled Buttons" width="300"> <img src="screenshots/ss4.png" alt="Interactive and State Buttons" width="300">
+<img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss3.png" alt="Animated and Styled Buttons" width="300"> <img src="https://raw.githubusercontent.com/Ibrahim-Lokman/bouncy_button/main/screenshots/ss4.png" alt="Interactive and State Buttons" width="300">
 
 ## Usage
 
@@ -65,6 +61,24 @@ BouncyButton(
 )
 ```
 
+### Sizing
+
+A button sizes itself to its child, and fills its parent when the parent forces a width.
+
+```dart
+// Fits the label
+BouncyButton(onPressed: () {}, child: Text('Fits')),
+
+// Fills the available width
+BouncyButton(
+  onPressed: () {},
+  style: BouncyButtonStyle(width: double.infinity),
+  child: Text('Full width'),
+),
+```
+
+`height` is a minimum, so the button grows when its content needs more room, such as with large system text sizes.
+
 ### Using Predefined Styles
 
 ```dart
@@ -78,6 +92,12 @@ BouncyButton.primary(
 BouncyButton.secondary(
   onPressed: () {},
   child: Text('Secondary Button'),
+)
+
+// Tertiary style button
+BouncyButton.tertiary(
+  onPressed: () {},
+  child: Text('Tertiary Button'),
 )
 ```
 
@@ -126,13 +146,10 @@ BouncyButton(
   child: Text('Scale Animation'),
 )
 
-// Bounce animation
+// Springs past its resting position on release
 BouncyButton(
   onPressed: () {},
-  animation: BouncyButtonAnimation(
-    type: BouncyButtonAnimationType.bounce,
-    duration: Duration(milliseconds: 200),
-  ),
+  animation: BouncyButtonAnimation.bouncy,
   child: Text('Bounce Animation'),
 )
 ```
@@ -224,6 +241,16 @@ MaterialApp(
 )
 ```
 
+| Theme field          | Used by                                                  |
+| -------------------- | -------------------------------------------------------- |
+| `primaryStyle`       | `BouncyButton` and `BouncyButton.primary` with no style  |
+| `secondaryStyle`     | `BouncyButton.secondary` with no style                   |
+| `tertiaryStyle`      | `BouncyButton.tertiary` with no style                    |
+| `defaultAnimation`   | Any button with no `animation`                           |
+| `defaultInteraction` | Any button with no `interaction`                         |
+
+A style passed directly to a button replaces the themed style entirely.
+
 ### Color Utilities
 
 ```dart
@@ -248,10 +275,11 @@ final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 
 | Property          | Type                    | Description                     |
 | ----------------- | ----------------------- | ------------------------------- |
-| `height`          | `double`                | Button height (default: 60)     |
+| `height`          | `double`                | Minimum face height (default: 60) |
 | `width`           | `double?`               | Button width (null = auto-size) |
 | `elevation`       | `double`                | 3D depth effect (default: 8)    |
 | `backgroundColor` | `Color?`                | Background color                |
+| `foregroundColor` | `Color?`                | Default text and icon color     |
 | `gradient`        | `Gradient?`             | Gradient background             |
 | `borderRadius`    | `BorderRadiusGeometry?` | Corner radius                   |
 | `shadowDarkness`  | `double`                | Shadow darkness (0.0-1.0)       |
@@ -263,7 +291,9 @@ final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 | Property        | Type                        | Description               |
 | --------------- | --------------------------- | ------------------------- |
 | `duration`      | `Duration`                  | Animation duration        |
+| `reverseDuration` | `Duration?`               | Release duration          |
 | `curve`         | `Curve`                     | Animation curve           |
+| `reverseCurve`  | `Curve?`                    | Release curve             |
 | `type`          | `BouncyButtonAnimationType` | Animation type            |
 | `scaleAmount`   | `double`                    | Scale factor (0.0-1.0)    |
 | `rotationAngle` | `double`                    | Rotation angle in radians |
@@ -277,6 +307,16 @@ final monochromatic = BouncyButtonColors.monochromatic(Colors.blue);
 | `enableSplash`         | `bool`               | Enable splash effect    |
 | `splashColor`          | `Color?`             | Splash color            |
 | `cursor`               | `MouseCursor?`       | Mouse cursor on hover   |
+| `hoverColor`           | `Color?`             | Overlay color on hover  |
+| `focusColor`           | `Color?`             | Keyboard focus ring     |
+
+## Migrating to 2.0
+
+- **Full-width buttons:** a button with no `width` now fits its child. Add `width: double.infinity` to any button that should fill its parent.
+- **Dragging:** moving a finger away from the button now cancels the press, as with Material buttons. Dragging and releasing on the button no longer calls `onPressed`.
+- **Text colors:** text and icons now default to a color that contrasts with the button. Set `foregroundColor` to choose your own.
+
+See the [changelog](CHANGELOG.md) for the full list.
 
 ## Examples
 

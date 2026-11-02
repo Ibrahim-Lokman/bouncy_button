@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 
 /// Extension for gradient manipulation.
 extension GradientExtension on Gradient {
-  /// Scales the gradient colors by a factor.
-  Gradient scale(double factor) {
+  /// Multiplies the lightness of each gradient color by [factor].
+  Gradient scaleLightness(double factor) {
     final scaledColors = colors.map((color) {
       final hsl = HSLColor.fromColor(color);
       return hsl
@@ -53,6 +53,13 @@ extension GradientExtension on Gradient {
 
     return this;
   }
+
+  /// Multiplies the lightness of each gradient color by [factor].
+  ///
+  /// `gradient.scale(0.6)` always calls [Gradient.scale], which fades colors
+  /// instead, so this method only runs with explicit extension syntax.
+  @Deprecated('Use scaleLightness instead.')
+  Gradient scale(double factor) => scaleLightness(factor);
 }
 
 /// Utility class for color manipulation.
