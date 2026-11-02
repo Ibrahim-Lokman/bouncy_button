@@ -1,4 +1,5 @@
 import 'package:bouncy_button/bouncy_button.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../data/mock_backend.dart';
@@ -15,6 +16,16 @@ class GalleryScreen extends StatefulWidget {
 
 class _GalleryScreenState extends State<GalleryScreen> {
   bool _toggleEnabled = true;
+  final BouncyButtonController _controller = BouncyButtonController();
+  int _cooldownPresses = 0;
+  int _plainPresses = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   bool _externalLoading = false;
   Set<String> _view = {'week'};
   Set<String> _formats = {'bold'};
@@ -39,6 +50,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _sizing(),
         _states(),
         _async(),
+        _protection(),
+        _destructive(),
         _interactions(),
         _groups(),
         _glass(),
@@ -530,6 +543,146 @@ class _GalleryScreenState extends State<GalleryScreen> {
         OutlinedButton(
           onPressed: () => setState(() => _externalLoading = !_externalLoading),
           child: Text(_externalLoading ? 'Stop loading' : 'Start loading'),
+        ),
+      ],
+    );
+  }
+
+  Widget _protection() {
+    return DemoSection(
+      title: 'Double-tap protection',
+      subtitle: 'Tap each button twice quickly. Requests follow the latency '
+          'and failure rate in Settings.',
+      children: [
+        BouncyButton(
+          onPressed: () => setState(() => _plainPresses++),
+          style: BouncyButtonStyle.tonal,
+          child: Text('No cooldown: $_plainPresses'),
+        ),
+        BouncyButton(
+          onPressed: () => setState(() => _cooldownPresses++),
+          cooldown: const Duration(milliseconds: 800),
+          child: Text('cooldown 800 ms: $_cooldownPresses'),
+        ),
+        BouncyAsyncBuilder(
+          onPressed: () => _request('ElevatedButton'),
+          onError: _failed,
+          builder: (context, onPressed, status) => ElevatedButton(
+            onPressed: onPressed,
+            child: Text(
+              status == BouncyButtonStatus.idle
+                  ? 'ElevatedButton'
+                  : 'ElevatedButton: ${status.name}',
+            ),
+          ),
+        ),
+        BouncyAsyncBuilder(
+          onPressed: () => _request('CupertinoButton'),
+          onError: _failed,
+          disableWhileBusy: true,
+          builder: (context, onPressed, status) => CupertinoButton.filled(
+            onPressed: onPressed,
+            child: status == BouncyButtonStatus.loading
+                ? const CupertinoActivityIndicator(color: Colors.white)
+                : const Text('CupertinoButton'),
+          ),
+        ),
+        ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) => Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              BouncyButton(
+                controller: _controller,
+                onPressedAsync: () => _request('Controlled'),
+                onError: _failed,
+                feedback: const BouncyButtonFeedback(loadingText: 'Saving…'),
+                child: const Text('Controlled'),
+              ),
+              OutlinedButton(
+                onPressed: _controller.press,
+                child: const Text('Press from code'),
+              ),
+              TextButton(
+                onPressed: _controller.reset,
+                child: const Text('Reset'),
+              ),
+              Text('Status: ${_controller.status.name}'),
+            ],
+          ),
+        ),
+        BouncyExclusiveScope(
+          lockDuringLoading: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('lockDuringLoading: one sign-in at a time'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  BouncyButton(
+                    onPressedAsync: () => _request('Google sign-in'),
+                    onError: _failed,
+                    style: BouncyButtonStyle.outlined,
+                    leading: const Icon(Icons.g_mobiledata),
+                    child: const Text('Google'),
+                  ),
+                  BouncyButton(
+                    onPressedAsync: () => _request('Apple sign-in'),
+                    onError: _failed,
+                    style: BouncyButtonStyle.outlined,
+                    leading: const Icon(Icons.apple),
+                    child: const Text('Apple'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _destructive() {
+    return DemoSection(
+      title: 'Destructive, tooltips, and tap targets',
+      subtitle: 'Error colors work with every fill. Small buttons can keep a '
+          '48 pixel tap area.',
+      children: [
+        for (final fill in [
+          BouncyButtonFill.filled,
+          BouncyButtonFill.tonal,
+          BouncyButtonFill.outlined,
+          BouncyButtonFill.ghost,
+        ])
+          BouncyButton(
+            onPressed: _log('Delete ${fill.name}'),
+            style: BouncyButtonStyle.destructive.copyWith(fill: fill),
+            leading: const Icon(Icons.delete_outline),
+            child: Text('Delete (${fill.name})'),
+          ),
+        BouncyButton(
+          onPressed: _log('Tooltip'),
+          tooltip: 'Share this page',
+          style: BouncyButtonStyle.circle,
+          child: const Icon(Icons.share),
+        ),
+        BouncyButton(
+          onPressed: _log('Small with tap target'),
+          tooltip: 'Close',
+          style: const BouncyButtonStyle(
+            width: 32,
+            height: 28,
+            elevation: 3,
+            padding: EdgeInsets.zero,
+            minTapTarget: 48,
+          ),
+          child: const Icon(Icons.close, size: 18),
         ),
       ],
     );

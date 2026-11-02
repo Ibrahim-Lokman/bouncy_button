@@ -161,9 +161,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  BouncyButton.secondary(
+                  // Tonal, so Pay stays the one prominent button.
+                  BouncyButton(
                     onPressedAsync: _applyPromo,
                     onError: _promoFailed,
+                    style: BouncyButtonStyle.tonal,
                     child: const Text('Apply'),
                   ),
                 ],
@@ -232,6 +234,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               BouncyButton.primary(
                 onPressedAsync: _pay,
                 onError: _payFailed,
+                feedback: const BouncyButtonFeedback(
+                  loadingText: 'Paying…',
+                  minLoadingDuration: Duration(milliseconds: 400),
+                ),
                 style: BouncyButtonStyle.primary.copyWith(
                   width: double.infinity,
                 ),
@@ -250,8 +256,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         Text('Order $_orderId placed',
                             style: textTheme.titleMedium),
                         const SizedBox(height: 12),
-                        BouncyButton.tertiary(
+                        BouncyButton(
                           onPressed: _newOrder,
+                          style: BouncyButtonStyle.outlined,
                           child: const Text('Start a new order'),
                         ),
                       ],

@@ -113,6 +113,10 @@ class BouncyButton extends StatefulWidget {
   ///
   /// Uses [style] if provided, then [BouncyButtonTheme.secondaryStyle], then
   /// [BouncyButtonStyle.secondary].
+  ///
+  /// That preset is filled, like the primary button, and differs only in size.
+  /// To show a less important action, prefer a less prominent fill, such as
+  /// [BouncyButtonStyle.tonal].
   const BouncyButton.secondary({
     super.key,
     required this.child,
@@ -150,6 +154,10 @@ class BouncyButton extends StatefulWidget {
   ///
   /// Uses [style] if provided, then [BouncyButtonTheme.tertiaryStyle], then
   /// [BouncyButtonStyle.flat].
+  ///
+  /// That preset is filled, like the primary button, and differs only in size.
+  /// To show a minor action, prefer [BouncyButtonStyle.outlined] or
+  /// [BouncyButtonStyle.ghost].
   const BouncyButton.tertiary({
     super.key,
     required this.child,

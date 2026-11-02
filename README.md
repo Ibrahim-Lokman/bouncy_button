@@ -23,7 +23,7 @@ Add this to your package's `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  bouncy_button: ^2.0.0
+  bouncy_button: ^2.1.0
 ```
 
 Then run:
@@ -298,6 +298,29 @@ BouncyButtonStyle.simple(
 )
 ```
 
+### Choosing a Style
+
+Show which action matters most through style, not size. Apple's [guidelines](https://developer.apple.com/design/human-interface-guidelines/buttons) also advise no more than one or two prominent buttons per screen.
+
+| Action | Style |
+| --- | --- |
+| The main action, such as Pay | `BouncyButtonStyle.primary` (filled) |
+| Secondary actions, such as Apply | `BouncyButtonStyle.tonal` |
+| Minor actions, such as Cancel | `BouncyButtonStyle.outlined` or `ghost` |
+| Deleting or removing something | `BouncyButtonStyle.destructive` |
+
+`BouncyButtonStyle.destructive` uses the theme's error colors, and works with any fill:
+
+```dart
+BouncyButton(
+  onPressed: deleteAccount,
+  style: BouncyButtonStyle.destructive.copyWith(fill: BouncyButtonFill.outlined),
+  child: const Text('Delete account'),
+)
+```
+
+`BouncyButton.secondary` and `.tertiary` are filled too, and differ from the primary button only in size. Prefer the fills above for new code.
+
 ### Button Groups
 
 `BouncyButtonGroup` is a row of connected buttons for choosing one option, or several with `multiSelect: true`:
@@ -349,6 +372,57 @@ BouncyButton(
 
 If loading is managed elsewhere, pass `isLoading: true` instead. Errors without an `onError` handler go to `FlutterError.reportError`, so they are never silently lost.
 
+Two more `feedback` options:
+
+- `loadingText: 'Saving…'` shows text beside the spinner, which screen readers also read. The button keeps its size, so longer text is cut off.
+- `minLoadingDuration: Duration(milliseconds: 400)` keeps loading on screen for at least that long, so a very fast action doesn't flash the spinner.
+
+### Preventing Double Taps
+
+A quick double tap on a plain `onPressed` runs it twice, which can open the same page twice. Set `cooldown` to ignore presses for a while after the button is used:
+
+```dart
+BouncyButton(
+  onPressed: () => Navigator.of(context).push(route),
+  cooldown: const Duration(milliseconds: 600),
+  child: const Text('Open'),
+)
+```
+
+For `onPressedAsync`, the cooldown starts once the button is ready again, after any success or error, and errors count too. `BouncyPressable` takes a `cooldown` as well.
+
+### Protecting Any Button
+
+`BouncyAsyncBuilder` brings the same protection and states to buttons you already use, including Material, Cupertino, and your own:
+
+```dart
+BouncyAsyncBuilder(
+  onPressed: () => api.placeOrder(cart),
+  builder: (context, onPressed, status) => ElevatedButton(
+    onPressed: onPressed,
+    child: status == BouncyButtonStatus.loading
+        ? const CircularProgressIndicator()
+        : const Text('Pay'),
+  ),
+)
+```
+
+While the action runs, the callback ignores presses, even two in the same frame. It stays non-null, so the button keeps its keyboard focus. Set `disableWhileBusy: true` to receive `null` instead, which makes most buttons look disabled but drops focus. It takes `cooldown`, `controller`, and `feedback` timings, and needs no Material code.
+
+### Controlling a Button from Code
+
+```dart
+final controller = BouncyButtonController();
+
+BouncyButton(controller: controller, onPressedAsync: save, child: const Text('Save'))
+
+await controller.press(); // Runs the action with its press animation
+controller.reset();       // Back to idle, ignoring a late result
+controller.status;        // idle, loading, success, or error
+```
+
+The controller is a `ChangeNotifier`, so you can listen for status changes. It works with `BouncyAsyncBuilder` too.
+
 ### Springs and Shape
 
 A spring makes the press respond to the finger: pressing again mid-release reverses smoothly from wherever the button is, keeping its speed. Below a damping ratio of 1, it bounces as it settles.
@@ -398,6 +472,20 @@ MaterialApp(
 
 Inside the scope, a press that starts while another button is held is ignored. Keyboard and screen reader activation are not affected.
 
+To let only one async action run at a time, such as two sign-in buttons, set `lockDuringLoading`. While one is loading, the other async buttons in the scope are disabled:
+
+```dart
+BouncyExclusiveScope(
+  lockDuringLoading: true,
+  child: Column(children: [googleSignInButton, appleSignInButton]),
+)
+```
+
+### Tooltips and Tap Targets
+
+- **Tooltip:** `BouncyButton(tooltip: 'Add to favorites')` shows on hover or long press, and screen readers read it once. Use it for buttons with only an icon.
+- **Tap target:** a button drawn smaller than 48 pixels is hard to tap. `BouncyButtonStyle(minTapTarget: 48)` enlarges the tap area without changing the look. It adds space around the button.
+
 ### Tap Callbacks
 
 Both widgets accept `onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`. A button with only `onLongPress` stays enabled.
@@ -437,6 +525,8 @@ Default colors still come from the SDK's `Theme`. See Flutter's [migration guide
 | `textStyle`       | `TextStyle?`            | Default text style              |
 | `iconSize`        | `double?`               | Default icon size               |
 | `pressedBorderRadius` | `BorderRadiusGeometry?` | Corners while fully pressed |
+| `tone`            | `BouncyButtonTone`      | normal or destructive (default: normal) |
+| `minTapTarget`    | `double?`               | Smallest tap area, such as 48   |
 
 ### BouncyButtonAnimation Properties
 
@@ -494,6 +584,30 @@ BouncyPressable(onTap: open, scaleFactor: 0.9, child: card)
 - Nested pressables no longer both bounce, and setting changes apply on hot reload.
 - To stop two simultaneous taps both firing, wrap the area in `BouncyExclusiveScope`.
 - Keyboard activation, screen readers, and reduced motion work without any setup.
+
+### From tap_debouncer
+
+`tap_debouncer` passes your button a callback that is null while busy. `BouncyAsyncBuilder` does the same job, and adds success and error states, error reporting, and keyboard focus that isn't lost:
+
+```dart
+// tap_debouncer
+TapDebouncer(
+  onTap: () => api.save(),
+  cooldown: const Duration(seconds: 1),
+  builder: (context, onTap) => ElevatedButton(onPressed: onTap, child: const Text('Save')),
+)
+
+// bouncy_button
+BouncyAsyncBuilder(
+  onPressed: () => api.save(),
+  cooldown: const Duration(seconds: 1),
+  builder: (context, onPressed, status) => ElevatedButton(onPressed: onPressed, child: const Text('Save')),
+)
+```
+
+- `waitBuilder`: use `status` in your builder instead, or `BouncyButton` with `feedback.loadingBuilder`.
+- **Disabled look:** for buttons that look disabled while busy, as with `tap_debouncer`, set `disableWhileBusy: true`.
+- **Errors:** an error still gets the cooldown, and is sent to `onError` or reported, rather than being lost.
 
 ### From animated_button
 
