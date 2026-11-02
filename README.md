@@ -565,39 +565,31 @@ Default colors still come from the SDK's `Theme`. See Flutter's [migration guide
 
 See the [changelog](CHANGELOG.md) for the full list.
 
-## Coming from Another Package
+## Migration Examples
 
-### From flutter_bounceable
-
-`BouncyPressable` takes the same callback and timing names:
+### Example A: a press effect on any widget
 
 ```dart
-// flutter_bounceable
+// Before
 Bounceable(onTap: open, scaleFactor: 0.9, child: card)
 
-// bouncy_button
+// After
 BouncyPressable(onTap: open, scaleFactor: 0.9, child: card)
 ```
 
-- `duration`, `reverseDuration`, `curve`, `reverseCurve`, `onTapDown`, `onTapUp`, `onTapCancel`, `onLongPress`, and `hitTestBehavior` work the same way.
-- The default `scaleFactor` is 0.95 rather than 0.8. Set `scaleFactor: 0.8` for the old look.
-- Nested pressables no longer both bounce, and setting changes apply on hot reload.
-- To stop two simultaneous taps both firing, wrap the area in `BouncyExclusiveScope`.
-- Keyboard activation, screen readers, and reduced motion work without any setup.
+`duration`, `reverseDuration`, `curve`, `reverseCurve`, `onTapDown`, `onTapUp`, `onTapCancel`, `onLongPress`, and `hitTestBehavior` keep the same names. The default `scaleFactor` is 0.95.
 
-### From tap_debouncer
-
-`tap_debouncer` passes your button a callback that is null while busy. `BouncyAsyncBuilder` does the same job, and adds success and error states, error reporting, and keyboard focus that isn't lost:
+### Example B: blocking repeat taps on an existing button
 
 ```dart
-// tap_debouncer
+// Before
 TapDebouncer(
   onTap: () => api.save(),
   cooldown: const Duration(seconds: 1),
   builder: (context, onTap) => ElevatedButton(onPressed: onTap, child: const Text('Save')),
 )
 
-// bouncy_button
+// After
 BouncyAsyncBuilder(
   onPressed: () => api.save(),
   cooldown: const Duration(seconds: 1),
@@ -605,14 +597,12 @@ BouncyAsyncBuilder(
 )
 ```
 
-- `waitBuilder`: use `status` in your builder instead, or `BouncyButton` with `feedback.loadingBuilder`.
-- **Disabled look:** for buttons that look disabled while busy, as with `tap_debouncer`, set `disableWhileBusy: true`.
-- **Errors:** an error still gets the cooldown, and is sent to `onError` or reported, rather than being lost.
+Show progress with `status`. To pass `null` to the button while it's busy, set `disableWhileBusy: true`.
 
-### From animated_button
+### Example C: a 3D button from a few values
 
 ```dart
-// animated_button
+// Before
 AnimatedButton(
   onPressed: save,
   color: Colors.blue,
@@ -621,7 +611,7 @@ AnimatedButton(
   child: const Text('Save'),
 )
 
-// bouncy_button
+// After
 BouncyButton(
   onPressed: save,
   style: BouncyButtonStyle.simple(
@@ -633,9 +623,7 @@ BouncyButton(
 )
 ```
 
-- `ShadowDegree.light` and `dark` match `BouncyButtonStyle.shadowLight` and `shadowDark`, and `darken()` is `BouncyButtonColors.darken`.
-- Leave out `width` to size the button to its label, or use `double.infinity` to fill the space.
-- `onPressed` runs once per tap. A cancelled press never calls it.
+Leave out `width` to fit the label, or use `double.infinity` to fill the space.
 
 ## Examples
 

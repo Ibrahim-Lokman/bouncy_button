@@ -349,7 +349,7 @@ void main() {
       expect(tester.getSize(find.byType(BouncyButton)), const Size(160, 54));
     });
 
-    test('shadow constants match animated_button', () {
+    test('shadow constants have the documented values', () {
       expect(BouncyButtonStyle.shadowLight, 0.12);
       expect(BouncyButtonStyle.shadowDark, 0.3);
       expect(
