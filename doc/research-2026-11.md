@@ -93,7 +93,9 @@ Downloads and likes are per package. The feature notes come from a keyword searc
 
 - Confirmed: `material_ui` 1.9.0 and `cupertino_ui` 1.1.5 are on pub.dev from the `flutter.dev` publisher, and both require Flutter 3.47 or later and Dart `^3.13.0`.
 - Confirmed: Flutter's [issue #184093](https://github.com/flutter/flutter/issues/184093) says the SDK's copies are frozen from the 3.44 cutoff, that nothing should change for now, and that users will eventually need to migrate. Work is tracked in [issue #101479](https://github.com/flutter/flutter/issues/101479).
-- Not confirmed: blog posts give conflicting dates for deprecation and removal. I did not find an official date.
+- Confirmed: Flutter's `master` branch marks `package:flutter/material.dart` as `@Deprecated`, pointing to `material_ui`. Stable 3.47.9 has no such marker yet, and this package analyzes cleanly and passes its tests there.
+- Confirmed: `material_ui` defines its own `Theme`, `ThemeExtension`, `InkWell`, and `Material` classes rather than re-exporting the SDK's.
+- Flutter's [migration guide](https://docs.flutter.dev/release/breaking-changes/material-ui-and-cupertino-ui) makes 3.47 opt-in and says formal deprecation comes "in an upcoming stable release", with no version or removal date. It tells package authors to treat migrating as a major version bump. It describes a `MaterialUiCompatibilityBridge` that passes theme data to children still calling the SDK's `Theme.of`, but not across public API types. So `BouncyButtonTheme`, a `ThemeExtension` from the SDK, can't go in a `material_ui` theme's `extensions`, and those apps need a non-Material route to theme this package. I read the guide through a summarizing fetch, so check its exact wording before quoting it.
 - `m3e_buttons`, a rival released in October 2026, already depends on `material_ui`.
 
 **Springs.** `SpringDescription.withDurationAndBounce` first shipped in Flutter 3.32, which makes real spring physics much easier to tune.
@@ -113,6 +115,5 @@ Downloads and likes are per package. The feature notes come from a keyword searc
 ## Known gaps
 
 - **Not tested on real devices.** Everything ran in Flutter's test environment. Haptics were checked by watching the platform channel, not by feeling them, and animation feel needs a human.
-- **Not tested on the minimum Flutter version.** The newer APIs the widget depends on were checked against Flutter's 3.27 source, but the tests only ran on 3.44.9. The tests themselves use newer APIs, so they would need adjusting to run there.
 - **Not tested in a browser or with a real screen reader.** Web keyboard activation is wired up but has only been exercised through the standard shortcuts in tests.
 - **Pale custom colors** can still produce a vivid depth color, because explicit colors keep the original HSL darkening so existing apps do not change. Set `shadowColor` to override it.

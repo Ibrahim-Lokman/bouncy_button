@@ -591,8 +591,11 @@ void main() {
       await tester.pumpWidget(
         _app(BouncyButton(onPressed: () {}, child: const Text('x'))),
       );
-      final data = tester.getSemantics(find.text('x')).getSemanticsData();
-      expect(data.flagsCollection.isButton, isTrue);
+      final node = tester.getSemantics(find.text('x'));
+      // isSemantics, its replacement, does not exist on the minimum Flutter.
+      // ignore: deprecated_member_use
+      expect(node, containsSemantics(isButton: true));
+      final data = node.getSemanticsData();
       expect(data.label, 'x');
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       expect(data.hasAction(SemanticsAction.scrollLeft), isFalse);
