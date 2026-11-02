@@ -1,6 +1,6 @@
 # bouncy_button: research notes, November 2026
 
-Tested on Flutter 3.44.9 and Dart 3.12.2. Package data comes from the pub.dev API on 2026-11-02, and download counts cover the previous 30 days. These numbers will go stale, so re-check them before relying on them.
+Tested on Flutter 3.27.4, the minimum supported version, plus 3.44.9 and 3.47.9, the current stable release. Package data comes from the pub.dev API on 2026-11-02, and download counts cover the previous 30 days. These numbers will go stale, so re-check them before relying on them.
 
 ## Summary
 
@@ -102,18 +102,29 @@ Downloads and likes are per package. The feature notes come from a keyword searc
 
 **Material 3 Expressive.** Spring-based motion is the current design direction, but I found no official Flutter SDK support for it. Packages such as `m3e_buttons` and `material_3_expressive` are filling the gap.
 
-## Recommended roadmap
+## Roadmap progress
 
-1. **Ship 2.0.0** after checking it on real devices.
-2. **Add async support.** Let `onPressed` return a `Future`, showing a loading state and blocking repeat taps until it finishes. This is the clearest demand signal, and double-submit protection is a real need for checkout and form buttons.
-3. **Add a `BouncyPressable` wrapper.** Move the press engine into a widget that wraps any child. This enters the largest category, and the button can be rebuilt on top of it.
-4. **Add spring physics.** Drive release with a `SpringDescription` so the bounce responds to how far the press got. This would raise the minimum to Flutter 3.32.
-5. **Prepare for Material decoupling.** Keep Material use to theme lookup and the optional splash, so a later move to `material_ui` is small. Migrate when Flutter announces a deprecation or 3.47 becomes widely adopted.
-6. **Rename generic public names.** `HapticFeedbackType` and `GradientExtension` could collide with other packages. Add prefixed names and deprecate the old ones.
-7. **Add CI.** Run analysis and tests on the minimum and latest Flutter versions, since the repository has no automated checks. Add golden tests for visual states.
+Done on the `improve/v2-foundations` branch, unpublished:
+
+| Item | Result |
+| --- | --- |
+| Async support | `onPressedAsync`, with loading, success, and error states and double-submit protection. It is a separate parameter, not a `FutureOr` `onPressed`, because that would silently put existing callers like `() => Navigator.push(...)` into a loading state |
+| `BouncyPressable` | A wrapper for any widget, built on a shared press core with no Material imports. Also adds nested-press handling and an opt-in `BouncyExclusiveScope` |
+| Spring physics | Built with `SpringDescription.withDampingRatio`, which exists on 3.27, so the minimum did not need to rise to 3.32 |
+| Material decoupling | `BouncyButtonScope` themes buttons without the Material `Theme`. A `material_ui` bridge package is deferred until Flutter sets a deprecation date |
+| Gaps from the rival review | Icons, size presets, tonal, outlined, ghost, and glass fills, hover lift, shape morphing, button groups, and press sounds |
+
+Still open:
+
+1. **Check on real devices before publishing.** See the known gaps below.
+2. **Rename generic public names.** `HapticFeedbackType` and `GradientExtension` could collide with other packages. Add prefixed names and deprecate the old ones.
+3. **Add CI.** Run analysis and tests on 3.27 and the latest stable, as was done by hand here. Add golden tests for visual states.
+4. **Move to `material_ui`** once Flutter sets a deprecation date, as a major version, which Flutter's migration guide recommends for packages.
 
 ## Known gaps
 
 - **Not tested on real devices.** Everything ran in Flutter's test environment. Haptics were checked by watching the platform channel, not by feeling them, and animation feel needs a human.
-- **Not tested in a browser or with a real screen reader.** Web keyboard activation is wired up but has only been exercised through the standard shortcuts in tests.
+- **Not tested in a browser or with a real screen reader.** Web keyboard activation is wired up but has only been exercised through the standard shortcuts in tests. The example app was built for the web and its first screen checked in headless Chrome, but nobody has interacted with it in a browser.
+- **Not checked by eye:** springs, hover lift, shape morphing, the error shake, and glass blur are tested by measuring positions and decorations, not by looking at them. Glass in particular needs a visual check over real content.
+- **Press sounds** were checked by watching the platform channel. Whether a click is heard depends on the platform and device settings.
 - **Pale custom colors** can still produce a vivid depth color, because explicit colors keep the original HSL darkening so existing apps do not change. Set `shadowColor` to override it.

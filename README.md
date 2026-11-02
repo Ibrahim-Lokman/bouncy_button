@@ -1,6 +1,6 @@
 # Bouncy Button
 
-A highly customizable Flutter button widget with engaging 3D depth effects, smooth animations, and extensive styling options. Create beautiful, interactive buttons that respond to user input with satisfying visual feedback.
+A highly customizable Flutter button with a 3D press effect, async loading states, spring physics, and full accessibility, plus `BouncyPressable` to give any widget the same press.
 
 ## Features
 
@@ -12,7 +12,10 @@ A highly customizable Flutter button widget with engaging 3D depth effects, smoo
 ♿ **Accessibility** - Screen reader support, keyboard activation, a focus ring, large text, and the system "reduce motion" setting  
 🎨 **Theme Integration** - App-wide styles through `BouncyButtonTheme`, with legible default colors in light and dark themes  
 🖥️ **Desktop and Web** - Hover highlight, mouse cursor, and keyboard navigation  
-🧩 **Any Widget** - `BouncyPressable` adds the press effect to cards, images, and list items
+🧩 **Any Widget** - `BouncyPressable` adds the press effect to cards, images, and list items  
+⏳ **Async Actions** - Loading, success, and error states, with double-submit protection  
+🌀 **Springs and Shape** - Interruptible spring motion, hover lift, and corners that morph on press  
+🎛️ **Sizes, Fills, and Groups** - Small to large sizes, filled to ghost fills, glass, icons, and connected button groups
 
 ## Installation
 
@@ -430,6 +433,10 @@ Default colors still come from the SDK's `Theme`. See Flutter's [migration guide
 | `shadowDarkness`  | `double`                | Shadow darkness (0.0-1.0)       |
 | `padding`         | `EdgeInsetsGeometry?`   | Internal padding                |
 | `border`          | `BoxBorder?`            | Border decoration               |
+| `fill`            | `BouncyButtonFill`      | filled, tonal, outlined, ghost, or glass (default: filled) |
+| `textStyle`       | `TextStyle?`            | Default text style              |
+| `iconSize`        | `double?`               | Default icon size               |
+| `pressedBorderRadius` | `BorderRadiusGeometry?` | Corners while fully pressed |
 
 ### BouncyButtonAnimation Properties
 
@@ -442,6 +449,7 @@ Default colors still come from the SDK's `Theme`. See Flutter's [migration guide
 | `type`          | `BouncyButtonAnimationType` | Animation type            |
 | `scaleAmount`   | `double`                    | Scale factor (0.0-1.0)    |
 | `rotationAngle` | `double`                    | Rotation angle in radians |
+| `spring`        | `BouncyPressSpring?`        | Spring physics, replacing duration and curves |
 
 ### BouncyButtonInteraction Properties
 
@@ -454,6 +462,9 @@ Default colors still come from the SDK's `Theme`. See Flutter's [migration guide
 | `cursor`               | `MouseCursor?`       | Mouse cursor on hover   |
 | `hoverColor`           | `Color?`             | Overlay color on hover  |
 | `focusColor`           | `Color?`             | Keyboard focus ring     |
+| `hoverLift`            | `double`             | Rise on mouse hover (default: 2) |
+| `enableSound`          | `bool`               | Play the system click   |
+| `onPressSound`         | `VoidCallback?`      | Play your own sound     |
 
 ## Migrating to 2.0
 
@@ -463,6 +474,54 @@ Default colors still come from the SDK's `Theme`. See Flutter's [migration guide
 - **Long press only:** a button with `onLongPress` but no `onPressed` is now enabled. Set `enabled: false` to disable it.
 
 See the [changelog](CHANGELOG.md) for the full list.
+
+## Coming from Another Package
+
+### From flutter_bounceable
+
+`BouncyPressable` takes the same callback and timing names:
+
+```dart
+// flutter_bounceable
+Bounceable(onTap: open, scaleFactor: 0.9, child: card)
+
+// bouncy_button
+BouncyPressable(onTap: open, scaleFactor: 0.9, child: card)
+```
+
+- `duration`, `reverseDuration`, `curve`, `reverseCurve`, `onTapDown`, `onTapUp`, `onTapCancel`, `onLongPress`, and `hitTestBehavior` work the same way.
+- The default `scaleFactor` is 0.95 rather than 0.8. Set `scaleFactor: 0.8` for the old look.
+- Nested pressables no longer both bounce, and setting changes apply on hot reload.
+- To stop two simultaneous taps both firing, wrap the area in `BouncyExclusiveScope`.
+- Keyboard activation, screen readers, and reduced motion work without any setup.
+
+### From animated_button
+
+```dart
+// animated_button
+AnimatedButton(
+  onPressed: save,
+  color: Colors.blue,
+  width: 200,
+  shadowDegree: ShadowDegree.dark,
+  child: const Text('Save'),
+)
+
+// bouncy_button
+BouncyButton(
+  onPressed: save,
+  style: BouncyButtonStyle.simple(
+    color: Colors.blue,
+    width: 200,
+    shadowDarkness: BouncyButtonStyle.shadowDark,
+  ),
+  child: const Text('Save'),
+)
+```
+
+- `ShadowDegree.light` and `dark` match `BouncyButtonStyle.shadowLight` and `shadowDark`, and `darken()` is `BouncyButtonColors.darken`.
+- Leave out `width` to size the button to its label, or use `double.infinity` to fill the space.
+- `onPressed` runs once per tap. A cancelled press never calls it.
 
 ## Examples
 
