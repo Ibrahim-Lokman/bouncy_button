@@ -326,8 +326,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: style)),
-          Flexible(
+          Expanded(flex: 3, child: Text(label, style: style)),
+          // Right-aligned, and wraps rather than overflowing at large sizes.
+          Expanded(
+            flex: 2,
             child: Text(amount, style: style, textAlign: TextAlign.end),
           ),
         ],

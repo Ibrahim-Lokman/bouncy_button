@@ -26,6 +26,17 @@ BoxDecoration _face(WidgetTester tester) {
   return tester.widget<Container>(face).decoration! as BoxDecoration;
 }
 
+BoxDecoration _slab(WidgetTester tester) {
+  final slab = find.descendant(
+    of: find.descendant(
+      of: find.byType(BouncyButton),
+      matching: find.byType(Positioned),
+    ),
+    matching: find.byType(DecoratedBox),
+  );
+  return tester.widget<DecoratedBox>(slab.first).decoration as BoxDecoration;
+}
+
 Color _textColor(WidgetTester tester, String text) =>
     DefaultTextStyle.of(tester.element(find.text(text))).style.color!;
 
@@ -187,9 +198,12 @@ void main() {
               theme: theme,
             ),
           );
-          final face = _face(tester).color!;
-          // A ghost face is clear, so its text sits on the page.
-          final background = face.a == 0 ? theme.colorScheme.surface : face;
+          // What is actually behind the text: the face over the depth layer
+          // over the page.
+          final background = Color.alphaBlend(
+            _face(tester).color!,
+            Color.alphaBlend(_slab(tester).color!, theme.colorScheme.surface),
+          );
           expect(
             _contrast(_textColor(tester, 'x'), background),
             greaterThanOrEqualTo(4.5),
@@ -259,6 +273,44 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
       expect(tint(), isNull);
+    });
+
+    for (final fill in [BouncyButtonFill.ghost, BouncyButtonFill.glass]) {
+      testWidgets('${fill.name} shows no depth layer through its face',
+          (tester) async {
+        for (final enabled in [true, false]) {
+          await tester.pumpWidget(
+            _app(
+              BouncyButton(
+                onPressed: enabled ? () {} : null,
+                style: BouncyButtonStyle(fill: fill),
+                child: const Text('x'),
+              ),
+            ),
+          );
+          expect(_slab(tester).color!.a, 0, reason: 'enabled: $enabled');
+        }
+      });
+    }
+
+    testWidgets('disabled faces are opaque, so the depth stays hidden',
+        (tester) async {
+      for (final fill in [
+        BouncyButtonFill.filled,
+        BouncyButtonFill.tonal,
+        BouncyButtonFill.outlined,
+      ]) {
+        await tester.pumpWidget(
+          _app(
+            BouncyButton(
+              onPressed: null,
+              style: BouncyButtonStyle(fill: fill),
+              child: const Text('x'),
+            ),
+          ),
+        );
+        expect(_face(tester).color!.a, 1, reason: fill.name);
+      }
     });
 
     for (final fill in BouncyButtonFill.values) {

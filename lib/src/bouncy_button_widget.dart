@@ -471,7 +471,9 @@ class _BouncyButtonState extends State<BouncyButton>
             scheme.primary;
       case BouncyButtonFill.tonal:
         if (!_isEnabled) {
-          return style.disabledColor ?? scheme.onSurface.withAlpha(31);
+          // Opaque, so the depth behind it doesn't show through.
+          return style.disabledColor ??
+              Color.alphaBlend(scheme.onSurface.withAlpha(31), scheme.surface);
         }
         return style.backgroundColor ??
             style.hslColor?.toColor() ??
@@ -562,6 +564,12 @@ class _BouncyButtonState extends State<BouncyButton>
   Color _depthColor(BuildContext context, BouncyButtonStyle style) {
     if (style.shadowColor != null) {
       return style.shadowColor!;
+    }
+    // These have no depth, and their face is clear or see-through, so a depth
+    // layer would show through it.
+    if (style.fill == BouncyButtonFill.ghost ||
+        style.fill == BouncyButtonFill.glass) {
+      return Colors.transparent;
     }
     if (_usesAccent(style) && style.decoration == null) {
       return _outlineColor(context, style);

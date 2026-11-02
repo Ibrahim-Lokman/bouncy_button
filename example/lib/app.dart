@@ -65,6 +65,7 @@ class _BouncyDemoAppState extends State<BouncyDemoApp> {
         listenable: _settings,
         builder: (context, _) => MaterialApp(
           title: 'Bouncy Button Demo',
+          debugShowCheckedModeBanner: false,
           themeMode: _settings.themeMode,
           theme: _theme(Brightness.light),
           darkTheme: _theme(Brightness.dark),
