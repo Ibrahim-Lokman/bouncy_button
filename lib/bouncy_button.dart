@@ -8,6 +8,7 @@ export 'src/pressable.dart';
 // Export configuration classes
 export 'src/styles.dart';
 export 'src/animations.dart';
+export 'src/spring.dart';
 export 'src/interactions.dart';
 export 'src/feedback.dart';
 

@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'enums.dart';
+import 'spring.dart';
 // ============================================================================
 // lib/src/animations.dart
 // ============================================================================
@@ -19,6 +20,7 @@ class BouncyButtonAnimation {
     this.scaleAmount = 0.95,
     this.rotationAngle = 0.03,
     this.animateOpacity = false,
+    this.spring,
   });
 
   /// Duration of the press animation.
@@ -48,6 +50,11 @@ class BouncyButtonAnimation {
   /// Whether to animate opacity changes.
   final bool animateOpacity;
 
+  /// Spring physics for the press, which lets a press reverse smoothly from
+  /// wherever it is. When set, [duration], [reverseDuration], [curve], and
+  /// [reverseCurve] are not used for the press.
+  final BouncyPressSpring? spring;
+
   /// Creates a copy with modified fields.
   BouncyButtonAnimation copyWith({
     Duration? duration,
@@ -58,6 +65,7 @@ class BouncyButtonAnimation {
     double? scaleAmount,
     double? rotationAngle,
     bool? animateOpacity,
+    BouncyPressSpring? spring,
   }) {
     return BouncyButtonAnimation(
       duration: duration ?? this.duration,
@@ -68,6 +76,7 @@ class BouncyButtonAnimation {
       scaleAmount: scaleAmount ?? this.scaleAmount,
       rotationAngle: rotationAngle ?? this.rotationAngle,
       animateOpacity: animateOpacity ?? this.animateOpacity,
+      spring: spring ?? this.spring,
     );
   }
 
@@ -84,7 +93,8 @@ class BouncyButtonAnimation {
         other.type == type &&
         other.scaleAmount == scaleAmount &&
         other.rotationAngle == rotationAngle &&
-        other.animateOpacity == animateOpacity;
+        other.animateOpacity == animateOpacity &&
+        other.spring == spring;
   }
 
   @override
@@ -97,6 +107,7 @@ class BouncyButtonAnimation {
         scaleAmount,
         rotationAngle,
         animateOpacity,
+        spring,
       );
 
   /// Quick animation preset with short duration.
@@ -109,6 +120,13 @@ class BouncyButtonAnimation {
   static const BouncyButtonAnimation smooth = BouncyButtonAnimation(
     duration: Duration(milliseconds: 150),
     curve: Curves.easeInOutCubic,
+  );
+
+  /// Spring preset: the press can reverse smoothly mid-animation, and the
+  /// button bounces as it settles.
+  static const BouncyButtonAnimation springy = BouncyButtonAnimation(
+    type: BouncyButtonAnimationType.bounce,
+    spring: BouncyPressSpring.bouncy,
   );
 
   /// Bouncy animation preset that springs past its resting position on release.

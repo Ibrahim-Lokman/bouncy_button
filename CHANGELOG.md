@@ -49,6 +49,9 @@
 - `BouncyButtonColors.darken` and `lighten`.
 - `BouncyButtonScope`, which themes buttons without the Material `Theme`, for apps using `package:material_ui`.
 - `BouncyButtonTheme` value equality.
+- `BouncyPressSpring` and `BouncyButtonAnimation.spring`, for spring physics. Pressing again mid-release reverses smoothly from wherever the button is, keeping its speed. Includes `snappy`, `bouncy`, and `gentle` springs and a `BouncyButtonAnimation.springy` preset. Also on `BouncyPressable.spring`.
+- Hover lift: with a mouse, the face rises slightly while hovered. Set the height with `BouncyButtonInteraction.hoverLift`, or 0 to turn it off. Reduced motion turns it off.
+- `BouncyButtonStyle.pressedBorderRadius`, which morphs the corners as the button is pressed, such as from a pill or circle to a rounded square.
 - `BouncyButton.tertiary`, using `BouncyButtonTheme.tertiaryStyle`.
 - `BouncyButton.onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`.
 - `BouncyButtonStyle.foregroundColor`.

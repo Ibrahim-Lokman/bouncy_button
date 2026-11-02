@@ -28,6 +28,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _constructors(),
         _animationTypes(),
         _animationPresets(),
+        _motion(),
         _stylePresets(),
         _fills(),
         _sizes(),
@@ -106,6 +107,57 @@ class _GalleryScreenState extends State<GalleryScreen> {
           onPressed: _log('Bouncy'),
           animation: BouncyButtonAnimation.bouncy,
           child: const Text('Bouncy'),
+        ),
+      ],
+    );
+  }
+
+  Widget _motion() {
+    return DemoSection(
+      title: 'Springs and shape',
+      subtitle: 'A spring reverses smoothly if you press again mid-release. '
+          'With a mouse, buttons also rise slightly on hover.',
+      children: [
+        for (final (name, spring) in [
+          ('snappy', BouncyPressSpring.snappy),
+          ('bouncy', BouncyPressSpring.bouncy),
+          ('gentle', BouncyPressSpring.gentle),
+        ])
+          BouncyButton(
+            onPressed: _log('Spring $name'),
+            animation: BouncyButtonAnimation(spring: spring),
+            child: Text('Spring $name'),
+          ),
+        BouncyButton(
+          onPressed: _log('springy preset'),
+          animation: BouncyButtonAnimation.springy,
+          child: const Text('springy preset'),
+        ),
+        BouncyButton(
+          onPressed: _log('Morph pill'),
+          style: BouncyButtonStyle.pill.copyWith(
+            pressedBorderRadius: BorderRadius.circular(8),
+          ),
+          animation: const BouncyButtonAnimation(
+            duration: Duration(milliseconds: 160),
+          ),
+          child: const Text('Pill to square'),
+        ),
+        BouncyButton(
+          onPressed: _log('Morph circle'),
+          semanticLabel: 'Circle to rounded square',
+          style: BouncyButtonStyle.circle.copyWith(
+            pressedBorderRadius: BorderRadius.circular(14),
+          ),
+          animation: const BouncyButtonAnimation(
+            spring: BouncyPressSpring.snappy,
+          ),
+          child: const Icon(Icons.play_arrow),
+        ),
+        BouncyButton(
+          onPressed: _log('No hover lift'),
+          interaction: const BouncyButtonInteraction(hoverLift: 0),
+          child: const Text('hoverLift: 0'),
         ),
       ],
     );

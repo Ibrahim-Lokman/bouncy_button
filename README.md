@@ -323,6 +323,27 @@ BouncyButton(
 
 If loading is managed elsewhere, pass `isLoading: true` instead. Errors without an `onError` handler go to `FlutterError.reportError`, so they are never silently lost.
 
+### Springs and Shape
+
+A spring makes the press respond to the finger: pressing again mid-release reverses smoothly from wherever the button is, keeping its speed. Below a damping ratio of 1, it bounces as it settles.
+
+```dart
+BouncyButton(
+  onPressed: () {},
+  animation: const BouncyButtonAnimation(spring: BouncyPressSpring.bouncy),
+  style: BouncyButtonStyle.pill.copyWith(
+    pressedBorderRadius: BorderRadius.circular(8), // Pill to rounded square
+  ),
+  child: const Text('Play'),
+)
+```
+
+- **Springs:** use `BouncyPressSpring.snappy`, `bouncy`, or `gentle`, or set `stiffness`, `dampingRatio`, and `mass` yourself. A spring replaces the duration and curves. `BouncyButtonAnimation.springy` is a ready-made preset.
+- **Shape:** `pressedBorderRadius` morphs the corners during the press. A circle button starts as a circle.
+- **Hover:** with a mouse, the face rises 2 pixels while hovered. Change it with `BouncyButtonInteraction.hoverLift`, or set 0 to turn it off.
+
+Reduced motion turns off springs, hover lift, and the error shake: the button moves instantly.
+
 ### Press Effect on Any Widget
 
 `BouncyPressable` adds a press-and-shrink effect to any widget, with the same keyboard, screen reader, and reduced-motion support as `BouncyButton`:

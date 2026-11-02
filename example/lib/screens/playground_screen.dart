@@ -31,6 +31,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   BouncyButtonAnimationType _type = BouncyButtonAnimationType.depth;
   BouncyButtonFill _fill = BouncyButtonFill.filled;
   bool _icon = false;
+  bool _spring = false;
   _NamedColor _color = _colors.first;
   double _height = 56;
   double _elevation = 8;
@@ -51,7 +52,7 @@ BouncyButton(
   ),${_icon ? '\n  leading: const Icon(Icons.bolt),' : ''}
   animation: const BouncyButtonAnimation(
     type: BouncyButtonAnimationType.${_type.name},
-    duration: Duration(milliseconds: ${_duration.round()}),
+    ${_spring ? 'spring: BouncyPressSpring.bouncy,' : 'duration: Duration(milliseconds: ${_duration.round()}),'}
   ),
   child: const Text('Press me'),
 )''';
@@ -113,6 +114,7 @@ BouncyButton(
               animation: BouncyButtonAnimation(
                 type: _type,
                 duration: Duration(milliseconds: _duration.round()),
+                spring: _spring ? BouncyPressSpring.bouncy : null,
               ),
               child: const Text('Press me'),
             ),
@@ -183,6 +185,13 @@ BouncyButton(
                 onSelected: (_) => setState(() => _fill = fill),
               ),
           ],
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Spring'),
+          subtitle: const Text('Replaces the duration'),
+          value: _spring,
+          onChanged: (value) => setState(() => _spring = value),
         ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,

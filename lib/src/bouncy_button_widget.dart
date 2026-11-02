@@ -301,6 +301,12 @@ class _BouncyButtonState extends State<BouncyButton>
     vsync: this,
   )..addStatusListener(_handleResultHoldStatus);
 
+  /// Raises the face while a mouse hovers.
+  late final AnimationController _hover = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 150),
+  );
+
   late final AnimationController _shake = AnimationController(
     vsync: this,
     duration: _shakeDuration,
@@ -324,6 +330,7 @@ class _BouncyButtonState extends State<BouncyButton>
   void dispose() {
     _resultHold.dispose();
     _shake.dispose();
+    _hover.dispose();
     super.dispose();
   }
 
@@ -390,6 +397,14 @@ class _BouncyButtonState extends State<BouncyButton>
     _resultHold
       ..duration = feedback.resultDuration
       ..forward(from: 0);
+  }
+
+  void _handleHover(bool hovered) {
+    if (hovered) {
+      _hover.forward();
+    } else {
+      _hover.reverse();
+    }
   }
 
   /// The horizontal shake offset, which dies away over the animation.
@@ -557,7 +572,11 @@ class _BouncyButtonState extends State<BouncyButton>
     return style.backgroundColor ?? style.hslColor?.toColor() ?? scheme.outline;
   }
 
-  BoxDecoration _faceDecoration(BuildContext context, BouncyButtonStyle style) {
+  BoxDecoration _faceDecoration(
+    BuildContext context,
+    BouncyButtonStyle style, {
+    BorderRadiusGeometry? morphRadius,
+  }) {
     if (style.decoration != null) {
       return style.decoration!;
     }
@@ -566,8 +585,8 @@ class _BouncyButtonState extends State<BouncyButton>
     return BoxDecoration(
       gradient: gradient,
       color: gradient == null ? _faceColor(context, style) : null,
-      borderRadius: _borderRadius(style),
-      shape: style.shape,
+      borderRadius: morphRadius ?? _borderRadius(style),
+      shape: morphRadius != null ? BoxShape.rectangle : style.shape,
       border: style.border ??
           (outlined
               ? Border.all(color: _outlineColor(context, style), width: 2)
@@ -579,14 +598,32 @@ class _BouncyButtonState extends State<BouncyButton>
 
   BoxDecoration _shadowDecoration(
     BuildContext context,
-    BouncyButtonStyle style,
-  ) {
+    BouncyButtonStyle style, {
+    BorderRadiusGeometry? morphRadius,
+  }) {
     return style.shadowDecoration ??
         BoxDecoration(
           color: _depthColor(context, style),
-          borderRadius: _borderRadius(style),
-          shape: style.shape,
+          borderRadius: morphRadius ?? _borderRadius(style),
+          shape: morphRadius != null ? BoxShape.rectangle : style.shape,
         );
+  }
+
+  bool _morphs(BouncyButtonStyle style) =>
+      style.pressedBorderRadius != null &&
+      style.decoration == null &&
+      style.shadowDecoration == null;
+
+  /// The corners at press progress [t], for a style that [_morphs].
+  BorderRadiusGeometry _morphRadius(BouncyButtonStyle style, double t) {
+    final rest = style.shape == BoxShape.circle
+        ? BorderRadius.circular(style.height / 2)
+        : _borderRadius(style)!;
+    return BorderRadiusGeometry.lerp(
+      rest,
+      style.pressedBorderRadius,
+      t.clamp(0.0, 1.0),
+    )!;
   }
 
   /// The hover tint and keyboard focus ring, painted over the face.
@@ -594,10 +631,13 @@ class _BouncyButtonState extends State<BouncyButton>
     BouncyButtonStyle style,
     BouncyButtonInteraction interaction,
     Color? foreground,
-    PressCoreData press,
-  ) {
+    PressCoreData press, {
+    BorderRadiusGeometry? morphRadius,
+  }) {
     final fallback = foreground ?? Colors.black;
-    final shape = style.decoration?.shape ?? style.shape;
+    final shape = morphRadius != null
+        ? BoxShape.rectangle
+        : style.decoration?.shape ?? style.shape;
     // A ghost button has no depth to push in, so a tint shows the press.
     final ghostPressed =
         style.fill == BouncyButtonFill.ghost && press.isPressed;
@@ -612,7 +652,9 @@ class _BouncyButtonState extends State<BouncyButton>
           : null,
       borderRadius: shape == BoxShape.circle
           ? null
-          : style.decoration?.borderRadius ?? _borderRadius(style),
+          : morphRadius ??
+              style.decoration?.borderRadius ??
+              _borderRadius(style),
       shape: shape,
     );
   }
@@ -771,20 +813,48 @@ class _BouncyButtonState extends State<BouncyButton>
       constraints: isCircle
           ? BoxConstraints.tightFor(height: style.height)
           : BoxConstraints(minHeight: style.height),
-      child: DecoratedBox(
-        position: DecorationPosition.foreground,
-        decoration: _highlightDecoration(
-          style,
-          interaction,
-          foreground,
-          press,
-        ),
-        child: Container(
-          decoration: _faceDecoration(context, style),
-          clipBehavior: style.clipBehavior,
-          child: _buildInk(style, interaction, press, content),
-        ),
-      ),
+      child: _morphs(style)
+          ? AnimatedBuilder(
+              animation: press.animation,
+              // Only the decoration changes per frame, not the content.
+              child: _buildInk(style, interaction, press, content),
+              builder: (context, child) {
+                final radius = _morphRadius(style, press.animation.value);
+                return DecoratedBox(
+                  position: DecorationPosition.foreground,
+                  decoration: _highlightDecoration(
+                    style,
+                    interaction,
+                    foreground,
+                    press,
+                    morphRadius: radius,
+                  ),
+                  child: Container(
+                    decoration: _faceDecoration(
+                      context,
+                      style,
+                      morphRadius: radius,
+                    ),
+                    clipBehavior: style.clipBehavior,
+                    child: child,
+                  ),
+                );
+              },
+            )
+          : DecoratedBox(
+              position: DecorationPosition.foreground,
+              decoration: _highlightDecoration(
+                style,
+                interaction,
+                foreground,
+                press,
+              ),
+              child: Container(
+                decoration: _faceDecoration(context, style),
+                clipBehavior: style.clipBehavior,
+                child: _buildInk(style, interaction, press, content),
+              ),
+            ),
     );
   }
 
@@ -799,18 +869,32 @@ class _BouncyButtonState extends State<BouncyButton>
     final reduceMotion = press.reduceMotion;
     // Built outside the AnimatedBuilder so that animation frames only move the
     // face instead of rebuilding its contents.
-    final shadow = Positioned(
-      top: style.elevation,
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: DecoratedBox(decoration: _shadowDecoration(context, style)),
-    );
+    final morphs = _morphs(style);
+    Widget shadowFor(double t) => Positioned(
+          top: style.elevation,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: DecoratedBox(
+            decoration: _shadowDecoration(
+              context,
+              style,
+              morphRadius: morphs ? _morphRadius(style, t) : null,
+            ),
+          ),
+        );
+    final staticShadow = morphs ? null : shadowFor(0);
     final face = _buildFace(context, style, interaction, press);
+    final lift = reduceMotion ? 0.0 : interaction.hoverLift;
 
     Widget content = AnimatedBuilder(
-      animation: Listenable.merge([press.animation, _shake]),
+      animation: Listenable.merge([press.animation, _shake, _hover]),
       builder: (context, _) {
+        final value = press.animation.value;
+        // A spring can overshoot past fully pressed, but the face can't go
+        // through its depth.
+        final depth = value > 1 ? 1.0 : value;
+        final hoverRise = lift * _hover.value * (1 - depth.clamp(0.0, 1.0));
         return PressTransform(
           animation: animationConfig,
           animationValue: press.animation.value,
@@ -821,11 +905,11 @@ class _BouncyButtonState extends State<BouncyButton>
               fit: StackFit.passthrough,
               clipBehavior: Clip.none,
               children: [
-                shadow,
+                staticShadow ?? shadowFor(value),
                 Padding(
                   padding: EdgeInsets.only(bottom: style.elevation),
                   child: Transform.translate(
-                    offset: Offset(0, style.elevation * press.animation.value),
+                    offset: Offset(0, style.elevation * depth - hoverRise),
                     child: face,
                   ),
                 ),
@@ -884,6 +968,8 @@ class _BouncyButtonState extends State<BouncyButton>
       reverseDuration: animation.reverseDuration,
       curve: animation.curve,
       reverseCurve: animation.reverseCurve,
+      spring: animation.spring,
+      onHoverChange: _handleHover,
       haptic: interaction.enableHapticFeedback
           ? interaction.hapticFeedbackType
           : null,

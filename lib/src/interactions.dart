@@ -21,6 +21,7 @@ class BouncyButtonInteraction {
     this.splashFactory,
     this.hoverColor,
     this.focusColor,
+    this.hoverLift = 2,
   });
 
   /// Whether to enable haptic feedback.
@@ -54,6 +55,12 @@ class BouncyButtonInteraction {
   /// If null, the button's foreground color is used.
   final Color? focusColor;
 
+  /// How far the face rises while a mouse hovers over the button, in pixels.
+  ///
+  /// Only a mouse triggers it, and the system "reduce motion" setting turns
+  /// it off. Set 0 to disable.
+  final double hoverLift;
+
   /// Creates a copy with modified fields.
   BouncyButtonInteraction copyWith({
     bool? enableHapticFeedback,
@@ -65,6 +72,7 @@ class BouncyButtonInteraction {
     InteractiveInkFeatureFactory? splashFactory,
     Color? hoverColor,
     Color? focusColor,
+    double? hoverLift,
   }) {
     return BouncyButtonInteraction(
       enableHapticFeedback: enableHapticFeedback ?? this.enableHapticFeedback,
@@ -76,6 +84,7 @@ class BouncyButtonInteraction {
       splashFactory: splashFactory ?? this.splashFactory,
       hoverColor: hoverColor ?? this.hoverColor,
       focusColor: focusColor ?? this.focusColor,
+      hoverLift: hoverLift ?? this.hoverLift,
     );
   }
 
@@ -93,7 +102,8 @@ class BouncyButtonInteraction {
         other.highlightColor == highlightColor &&
         other.splashFactory == splashFactory &&
         other.hoverColor == hoverColor &&
-        other.focusColor == focusColor;
+        other.focusColor == focusColor &&
+        other.hoverLift == hoverLift;
   }
 
   @override
@@ -107,5 +117,6 @@ class BouncyButtonInteraction {
         splashFactory,
         hoverColor,
         focusColor,
+        hoverLift,
       );
 }

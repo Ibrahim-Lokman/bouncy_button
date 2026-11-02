@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'enums.dart';
 import 'press_core.dart';
+import 'spring.dart';
 
 /// Adds a bouncy press effect to any widget.
 ///
@@ -35,6 +36,7 @@ class BouncyPressable extends StatelessWidget {
     this.reverseDuration,
     this.curve = Curves.easeOut,
     this.reverseCurve,
+    this.spring,
     this.haptic,
     this.cursor,
     this.hitTestBehavior,
@@ -88,6 +90,10 @@ class BouncyPressable extends StatelessWidget {
   /// Curve of the release. Defaults to [curve].
   final Curve? reverseCurve;
 
+  /// Spring physics for the press. When set, [duration], [reverseDuration],
+  /// [curve], and [reverseCurve] are not used.
+  final BouncyPressSpring? spring;
+
   /// Haptic feedback for a press. Off by default.
   final HapticFeedbackType? haptic;
 
@@ -132,6 +138,7 @@ class BouncyPressable extends StatelessWidget {
       reverseDuration: reverseDuration,
       curve: curve,
       reverseCurve: reverseCurve,
+      spring: spring,
       haptic: haptic,
       cursor: cursor,
       hitTestBehavior: hitTestBehavior,

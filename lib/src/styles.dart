@@ -42,6 +42,7 @@ class BouncyButtonStyle {
     this.fill = BouncyButtonFill.filled,
     this.textStyle,
     this.iconSize,
+    this.pressedBorderRadius,
   });
 
   /// A light depth shade, for [shadowDarkness].
@@ -214,6 +215,14 @@ class BouncyButtonStyle {
   /// The default icon size.
   final double? iconSize;
 
+  /// The corners while fully pressed. The corners change smoothly between
+  /// [borderRadius] and this as the button moves, such as from a pill to a
+  /// rounded square.
+  ///
+  /// For a [BoxShape.circle] button, the change starts from a circle. Not
+  /// used with [decoration] or [shadowDecoration].
+  final BorderRadiusGeometry? pressedBorderRadius;
+
   /// Creates a copy with modified fields.
   BouncyButtonStyle copyWith({
     double? height,
@@ -244,6 +253,7 @@ class BouncyButtonStyle {
     BouncyButtonFill? fill,
     TextStyle? textStyle,
     double? iconSize,
+    BorderRadiusGeometry? pressedBorderRadius,
   }) {
     return BouncyButtonStyle(
       height: height ?? this.height,
@@ -274,6 +284,7 @@ class BouncyButtonStyle {
       fill: fill ?? this.fill,
       textStyle: textStyle ?? this.textStyle,
       iconSize: iconSize ?? this.iconSize,
+      pressedBorderRadius: pressedBorderRadius ?? this.pressedBorderRadius,
     );
   }
 
@@ -310,7 +321,8 @@ class BouncyButtonStyle {
         other.shadowDecoration == shadowDecoration &&
         other.fill == fill &&
         other.textStyle == textStyle &&
-        other.iconSize == iconSize;
+        other.iconSize == iconSize &&
+        other.pressedBorderRadius == pressedBorderRadius;
   }
 
   @override
@@ -343,6 +355,7 @@ class BouncyButtonStyle {
         fill,
         textStyle,
         iconSize,
+        pressedBorderRadius,
       ]);
 
   /// Primary button style with standard elevation and padding.

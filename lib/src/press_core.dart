@@ -1,8 +1,10 @@
+import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'enums.dart';
 import 'exclusive_scope.dart';
+import 'spring.dart';
 
 /// What [PressCore] passes to its builder.
 ///
@@ -86,6 +88,8 @@ class PressCore extends StatefulWidget {
     this.labelReplacesChildSemantics = false,
     this.busy = false,
     this.semanticValue,
+    this.spring,
+    this.onHoverChange,
   });
 
   /// Builds the control. Called when state changes, not on animation frames.
@@ -161,14 +165,30 @@ class PressCore extends StatefulWidget {
   /// A screen reader value, such as "Loading". Changes are announced.
   final String? semanticValue;
 
+  /// Spring physics for the press. When set, [duration] and the curves are
+  /// not used.
+  final BouncyPressSpring? spring;
+
+  /// Called when the hover highlight starts or stops: only for a mouse, and
+  /// only while enabled.
+  final ValueChanged<bool>? onHoverChange;
+
   @override
   State<PressCore> createState() => _PressCoreState();
 }
 
-class _PressCoreState extends State<PressCore>
-    with SingleTickerProviderStateMixin {
+class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
   late final AnimationController _controller;
   late final CurvedAnimation _animation;
+
+  /// Drives the press when [PressCore.spring] is set. Unbounded, because a
+  /// spring overshoots.
+  AnimationController? _springController;
+  double _springTarget = 0;
+
+  /// How far a spring press must get before a quick tap's release begins, so
+  /// the press stays visible.
+  static const double _quickTapDepth = 0.9;
   FocusNode? _internalFocusNode;
 
   bool _isPressed = false;
@@ -219,6 +239,9 @@ class _PressCoreState extends State<PressCore>
   void didUpdateWidget(PressCore oldWidget) {
     super.didUpdateWidget(oldWidget);
     _syncAnimation();
+    if ((oldWidget.spring == null) != (widget.spring == null)) {
+      _switchDriver();
+    }
     // The gesture callbacks are about to be removed, so nothing else will
     // release a press that is in progress.
     if (!_isEnabled && _isPressed) {
@@ -226,7 +249,7 @@ class _PressCoreState extends State<PressCore>
       _isLongPressing = false;
       _releasePending = false;
       _endOwnership();
-      _controller.reverse();
+      _driveUp();
       // User code could call setState from this callback, which isn't allowed
       // during a build.
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -249,6 +272,7 @@ class _PressCoreState extends State<PressCore>
     _internalFocusNode?.dispose();
     _animation.dispose();
     _controller.dispose();
+    _springController?.dispose();
     super.dispose();
   }
 
@@ -266,7 +290,86 @@ class _PressCoreState extends State<PressCore>
   void _handleAnimationStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed && _releasePending) {
       _releasePending = false;
+      _driveUp();
+    }
+  }
+
+  bool get _usesSpring => widget.spring != null;
+
+  Animation<double> get _pressAnimation =>
+      _usesSpring ? _ensureSpringController() : _animation;
+
+  AnimationController _ensureSpringController() {
+    return _springController ??= AnimationController.unbounded(vsync: this)
+      ..addListener(_handleSpringTick);
+  }
+
+  /// Keeps the button where it is when switching between curve and spring.
+  void _switchDriver() {
+    if (_usesSpring) {
+      final value = _animation.value;
+      _controller.stop();
+      _ensureSpringController().value = value;
+      _springTarget = _isPressed ? 1 : 0;
+      _springTo(_springTarget);
+    } else {
+      final value = _springController?.value ?? 0;
+      _springController?.stop();
+      _controller.value = value.clamp(0.0, 1.0);
+      _isPressed ? _controller.forward() : _controller.reverse();
+    }
+  }
+
+  void _driveDown() {
+    if (_usesSpring) {
+      _springTo(1);
+    } else {
+      _controller.forward();
+    }
+  }
+
+  void _driveUp() {
+    if (_usesSpring) {
+      _springTo(0);
+    } else {
       _controller.reverse();
+    }
+  }
+
+  /// Whether the press is still on its way down.
+  bool get _stillGoingDown => _usesSpring
+      ? _springTarget == 1 && _springController!.value < _quickTapDepth
+      : _controller.status == AnimationStatus.forward;
+
+  /// Animates toward [target], starting from the current position and speed.
+  void _springTo(double target) {
+    final controller = _ensureSpringController();
+    _springTarget = target;
+    if (_reduceMotion) {
+      controller.value = target;
+      return;
+    }
+    final spring = widget.spring!;
+    controller.animateWith(
+      SpringSimulation(
+        SpringDescription.withDampingRatio(
+          mass: spring.mass,
+          stiffness: spring.stiffness,
+          ratio: spring.dampingRatio,
+        ),
+        controller.value,
+        target,
+        controller.velocity,
+      ),
+    );
+  }
+
+  void _handleSpringTick() {
+    if (_releasePending &&
+        _springTarget == 1 &&
+        _springController!.value >= _quickTapDepth) {
+      _releasePending = false;
+      _driveUp();
     }
   }
 
@@ -330,7 +433,7 @@ class _PressCoreState extends State<PressCore>
     // A new press takes over from a quick tap that is still finishing.
     _releasePending = false;
     setState(() => _isPressed = true);
-    _controller.forward();
+    _driveDown();
     if (withHaptics) {
       _provideHapticFeedback();
     }
@@ -346,10 +449,10 @@ class _PressCoreState extends State<PressCore>
     setState(() => _isPressed = false);
     // A quick tap can end before the first animation frame. Letting the press
     // run to the end keeps it visible.
-    if (completed && _controller.status == AnimationStatus.forward) {
+    if (completed && _stillGoingDown) {
       _releasePending = true;
     } else {
-      _controller.reverse();
+      _driveUp();
     }
     return true;
   }
@@ -362,7 +465,11 @@ class _PressCoreState extends State<PressCore>
     }
     if (!_isPressed) {
       _releasePending = true;
-      _controller.forward();
+      _driveDown();
+      // A spring under reduced motion arrives at once, so release now.
+      if (!_stillGoingDown && _usesSpring) {
+        _handleSpringTick();
+      }
     }
     onTap();
   }
@@ -453,7 +560,10 @@ class _PressCoreState extends State<PressCore>
             ),
           },
         },
-        onShowHoverHighlight: (value) => setState(() => _showHover = value),
+        onShowHoverHighlight: (value) {
+          setState(() => _showHover = value);
+          widget.onHoverChange?.call(value);
+        },
         onShowFocusHighlight: (value) => setState(() => _showFocus = value),
         child: ExcludeSemantics(
           excluding: labelReplacesChild,
@@ -493,7 +603,7 @@ class _PressCoreState extends State<PressCore>
                 child: widget.builder(
                   context,
                   PressCoreData(
-                    animation: _animation,
+                    animation: _pressAnimation,
                     isEnabled: enabled,
                     isPressed: _isPressed,
                     isHovered: _showHover,
