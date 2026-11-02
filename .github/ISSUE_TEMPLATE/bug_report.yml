@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in bouncy_button doesn't work as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. For security issues, use the [security policy](https://github.com/Ibrahim-Lokman/bouncy_button/security/policy) instead of this form.
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Describe the problem, and what you expected to happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: code
+    attributes:
+      label: Code sample
+      description: The smallest code that shows the problem. A complete `main.dart` is ideal.
+      render: dart
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Run the code sample.
+        2. Tap the button quickly.
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: bouncy_button version
+      placeholder: "2.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: flutter
+    attributes:
+      label: Output of `flutter --version`
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: platforms
+    attributes:
+      label: Platforms where it happens
+      options:
+        - label: Android
+        - label: iOS
+        - label: Web
+        - label: macOS
+        - label: Windows
+        - label: Linux
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, recordings, error logs, or settings such as large text, a screen reader, or reduced motion.

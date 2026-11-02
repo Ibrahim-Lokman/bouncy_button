@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest a new feature or an improvement.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe what you're trying to build and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: How should it work?
+      description: Describe the feature. A code sample of how you'd like to use it helps.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What have you tried instead?
+      description: Workarounds, or other packages you've looked at.
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to open a pull request for this.

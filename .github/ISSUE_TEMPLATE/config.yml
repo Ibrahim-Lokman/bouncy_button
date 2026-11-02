@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/Ibrahim-Lokman/bouncy_button/security/advisories/new
+    about: Report security issues privately, not in a public issue.
+  - name: Documentation
+    url: https://pub.dev/packages/bouncy_button
+    about: Usage guides and the full API reference.
