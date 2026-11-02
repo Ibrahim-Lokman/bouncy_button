@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart' show listEquals;
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 // ============================================================================
 // lib/src/styles.dart
 // ============================================================================

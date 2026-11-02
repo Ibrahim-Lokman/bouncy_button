@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'enums.dart';
 // ============================================================================
 // lib/src/animations.dart

@@ -6,6 +6,7 @@
 - **Height:** `BouncyButtonStyle.height` is now a minimum, so the face grows instead of clipping large text. Circular buttons stay exactly this tall.
 - **Dragging:** dragging a finger across the button and releasing no longer counts as a press. Press and release is now handled the same way as Material buttons: moving away cancels the press.
 - **Colors:** with no colors set, the face now uses `colorScheme.primary` instead of `primaryColor`, and text and icons default to a contrasting color. A color set directly on the child still wins.
+- **Long press only:** a button with `onLongPress` but no `onPressed` is now enabled, so it looks enabled and can take focus. It used to render as disabled and ignore the long press.
 - **Nullable fields:** `BouncyButton.style`, `animation`, and `interaction` are now nullable, because null means "use the theme".
 - `BouncyButtonStyle.flat` is 46 tall instead of 44, so it reaches the 48px minimum tap target with its elevation.
 - `BouncyButtonAnimation.bouncy` has new values and now springs past its resting position on release.
@@ -35,6 +36,7 @@
 ### Added
 
 - `BouncyButton.tertiary`, using `BouncyButtonTheme.tertiaryStyle`.
+- `BouncyButton.onTapDown`, `onTapUp`, `onTapCancel`, and `hitTestBehavior`.
 - `BouncyButtonStyle.foregroundColor`.
 - `BouncyButtonAnimation.reverseDuration` and `reverseCurve`.
 - `BouncyButtonInteraction.hoverColor` and `focusColor`.

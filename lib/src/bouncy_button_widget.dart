@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'styles.dart';
 import 'animations.dart';
 import 'interactions.dart';
-import 'enums.dart';
+import 'press_core.dart';
+import 'press_transform.dart';
 import 'theme.dart';
 import 'utils.dart';
 
@@ -36,6 +36,10 @@ class BouncyButton extends StatefulWidget {
     required this.child,
     required this.onPressed,
     this.onLongPress,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.hitTestBehavior,
     this.style,
     this.animation,
     this.interaction,
@@ -55,6 +59,10 @@ class BouncyButton extends StatefulWidget {
     required this.child,
     required this.onPressed,
     this.onLongPress,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.hitTestBehavior,
     this.style,
     this.animation,
     this.interaction,
@@ -74,6 +82,10 @@ class BouncyButton extends StatefulWidget {
     required this.child,
     required this.onPressed,
     this.onLongPress,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.hitTestBehavior,
     this.style,
     this.animation,
     this.interaction,
@@ -93,6 +105,10 @@ class BouncyButton extends StatefulWidget {
     required this.child,
     required this.onPressed,
     this.onLongPress,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.hitTestBehavior,
     this.style,
     this.animation,
     this.interaction,
@@ -112,11 +128,25 @@ class BouncyButton extends StatefulWidget {
 
   /// Called when the button is tapped or otherwise activated.
   ///
-  /// If this is null, the button will be disabled.
+  /// If this and [onLongPress] are both null, the button is disabled.
   final VoidCallback? onPressed;
 
   /// Called when the button is long-pressed.
   final VoidCallback? onLongPress;
+
+  /// Called when a press starts.
+  final GestureTapDownCallback? onTapDown;
+
+  /// Called when a press ends with a tap, before [onPressed].
+  final GestureTapUpCallback? onTapUp;
+
+  /// Called when a press ends without a tap, such as when the finger moves
+  /// away, a long press takes over, or the button is disabled while held.
+  final VoidCallback? onTapCancel;
+
+  /// How the button behaves during hit testing. Defaults to
+  /// [HitTestBehavior.opaque].
+  final HitTestBehavior? hitTestBehavior;
 
   /// Styling configuration for the button.
   ///
@@ -164,18 +194,10 @@ class BouncyButton extends StatefulWidget {
   State<BouncyButton> createState() => _BouncyButtonState();
 }
 
-class _BouncyButtonState extends State<BouncyButton>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final CurvedAnimation _animation;
-
-  bool _isPressed = false;
-  bool _isLongPressing = false;
-  bool _showHover = false;
-  bool _showFocus = false;
-  bool _reduceMotion = false;
-
-  bool get _isEnabled => widget.enabled && widget.onPressed != null;
+class _BouncyButtonState extends State<BouncyButton> {
+  bool get _isEnabled =>
+      widget.enabled &&
+      (widget.onPressed != null || widget.onLongPress != null);
 
   BouncyButtonStyle get _style {
     final theme = BouncyButtonTheme.of(context);
@@ -198,113 +220,6 @@ class _BouncyButtonState extends State<BouncyButton>
       widget.interaction ??
       BouncyButtonTheme.of(context)?.defaultInteraction ??
       const BouncyButtonInteraction();
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(vsync: this)
-      ..addStatusListener(_handleAnimationStatus);
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _syncAnimation();
-  }
-
-  @override
-  void didUpdateWidget(BouncyButton oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    _syncAnimation();
-    // The gesture callbacks are about to be removed, so nothing else will
-    // release a press that is in progress.
-    if (!_isEnabled && _isPressed) {
-      _isPressed = false;
-      _isLongPressing = false;
-      _controller.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _animation.dispose();
-    _controller.dispose();
-    super.dispose();
-  }
-
-  void _syncAnimation() {
-    final config = _animationConfig;
-    _reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    _controller
-      ..duration = _reduceMotion ? Duration.zero : config.duration
-      ..reverseDuration =
-          _reduceMotion ? Duration.zero : config.reverseDuration;
-    _animation
-      ..curve = config.curve
-      ..reverseCurve = config.reverseCurve;
-  }
-
-  void _handleAnimationStatus(AnimationStatus status) {
-    // Finishes the press of a tap that was released before it fully went down.
-    if (status == AnimationStatus.completed && !_isPressed) {
-      _controller.reverse();
-    }
-  }
-
-  void _press({bool withHaptics = true}) {
-    if (_isPressed) {
-      return;
-    }
-    setState(() => _isPressed = true);
-    _controller.forward();
-    if (withHaptics && _interaction.enableHapticFeedback) {
-      _provideHapticFeedback();
-    }
-  }
-
-  void _release({required bool completed}) {
-    if (!_isPressed) {
-      return;
-    }
-    setState(() => _isPressed = false);
-    // A quick tap can end before the first animation frame. Letting the press
-    // run to the end keeps it visible; _handleAnimationStatus then reverses it.
-    if (!completed || _controller.status != AnimationStatus.forward) {
-      _controller.reverse();
-    }
-  }
-
-  /// Handles activation that has no pointer: the keyboard and screen readers.
-  void _activate() {
-    if (!_isEnabled) {
-      return;
-    }
-    if (!_isPressed) {
-      _controller.forward();
-    }
-    widget.onPressed!.call();
-  }
-
-  void _provideHapticFeedback() {
-    switch (_interaction.hapticFeedbackType) {
-      case HapticFeedbackType.light:
-        HapticFeedback.lightImpact();
-        break;
-      case HapticFeedbackType.medium:
-        HapticFeedback.mediumImpact();
-        break;
-      case HapticFeedbackType.heavy:
-        HapticFeedback.heavyImpact();
-        break;
-      case HapticFeedbackType.selection:
-        HapticFeedback.selectionClick();
-        break;
-      case HapticFeedbackType.vibrate:
-        HapticFeedback.vibrate();
-        break;
-    }
-  }
 
   MouseCursor _cursor(BouncyButtonInteraction interaction) {
     return interaction.cursor ??
@@ -419,13 +334,15 @@ class _BouncyButtonState extends State<BouncyButton>
     BouncyButtonStyle style,
     BouncyButtonInteraction interaction,
     Color? foreground,
+    PressCoreData press,
   ) {
     final fallback = foreground ?? Colors.black;
     final shape = style.decoration?.shape ?? style.shape;
     return BoxDecoration(
-      color:
-          _showHover ? interaction.hoverColor ?? fallback.withAlpha(20) : null,
-      border: _showFocus
+      color: press.isHovered
+          ? interaction.hoverColor ?? fallback.withAlpha(20)
+          : null,
+      border: press.isFocused
           ? Border.all(color: interaction.focusColor ?? fallback, width: 2)
           : null,
       borderRadius: shape == BoxShape.circle
@@ -435,10 +352,14 @@ class _BouncyButtonState extends State<BouncyButton>
     );
   }
 
-  Widget _buildContent(BuildContext context, BouncyButtonStyle style) {
+  Widget _buildContent(
+    BuildContext context,
+    BouncyButtonStyle style,
+    PressCoreData press,
+  ) {
     final builder = widget.builder;
     if (builder != null) {
-      return builder(context, _isPressed);
+      return builder(context, press.isPressed);
     }
     return Padding(
       padding: style.padding ??
@@ -455,20 +376,21 @@ class _BouncyButtonState extends State<BouncyButton>
   Widget _buildInk(
     BouncyButtonStyle style,
     BouncyButtonInteraction interaction,
+    PressCoreData press,
     Widget child,
   ) {
     if (!interaction.enableSplash) {
       return child;
     }
-    final enabled = _isEnabled;
+    final enabled = press.isEnabled;
     final isCircle = style.shape == BoxShape.circle;
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        onTap: enabled ? widget.onPressed : null,
-        onTapDown: enabled ? (_) => _press() : null,
-        onTapUp: enabled ? (_) => _release(completed: true) : null,
-        onTapCancel: enabled ? () => _release(completed: false) : null,
+        onTap: enabled ? press.handleTap : null,
+        onTapDown: enabled ? press.handleTapDown : null,
+        onTapUp: enabled ? press.handleTapUp : null,
+        onTapCancel: enabled ? press.handleTapCancel : null,
         splashColor: interaction.splashColor,
         highlightColor: interaction.highlightColor,
         hoverColor: Colors.transparent,
@@ -490,9 +412,10 @@ class _BouncyButtonState extends State<BouncyButton>
     BuildContext context,
     BouncyButtonStyle style,
     BouncyButtonInteraction interaction,
+    PressCoreData press,
   ) {
     final foreground = _foregroundColor(context, style);
-    Widget content = _buildContent(context, style);
+    Widget content = _buildContent(context, style, press);
     if (foreground != null) {
       content = IconTheme.merge(
         data: IconThemeData(color: foreground),
@@ -509,11 +432,16 @@ class _BouncyButtonState extends State<BouncyButton>
           : BoxConstraints(minHeight: style.height),
       child: DecoratedBox(
         position: DecorationPosition.foreground,
-        decoration: _highlightDecoration(style, interaction, foreground),
+        decoration: _highlightDecoration(
+          style,
+          interaction,
+          foreground,
+          press,
+        ),
         child: Container(
           decoration: _faceDecoration(context, style),
           clipBehavior: style.clipBehavior,
-          child: _buildInk(style, interaction, content),
+          child: _buildInk(style, interaction, press, content),
         ),
       ),
     );
@@ -523,9 +451,11 @@ class _BouncyButtonState extends State<BouncyButton>
     BuildContext context,
     BouncyButtonStyle style,
     BouncyButtonInteraction interaction,
+    BouncyButtonAnimation animationConfig,
+    PressCoreData press,
   ) {
-    final animationConfig = _animationConfig;
-    final enabled = _isEnabled;
+    final enabled = press.isEnabled;
+    final reduceMotion = press.reduceMotion;
     // Built outside the AnimatedBuilder so that animation frames only move the
     // face instead of rebuilding its contents.
     final shadow = Positioned(
@@ -535,15 +465,15 @@ class _BouncyButtonState extends State<BouncyButton>
       right: 0,
       child: DecoratedBox(decoration: _shadowDecoration(context, style)),
     );
-    final face = _buildFace(context, style, interaction);
+    final face = _buildFace(context, style, interaction, press);
 
     Widget content = AnimatedBuilder(
-      animation: _animation,
+      animation: press.animation,
       builder: (context, _) {
-        return _AnimationTransformer(
+        return PressTransform(
           animation: animationConfig,
-          animationValue: _animation.value,
-          reduceMotion: _reduceMotion,
+          animationValue: press.animation.value,
+          reduceMotion: reduceMotion,
           child: Stack(
             fit: StackFit.passthrough,
             clipBehavior: Clip.none,
@@ -552,7 +482,7 @@ class _BouncyButtonState extends State<BouncyButton>
               Padding(
                 padding: EdgeInsets.only(bottom: style.elevation),
                 child: Transform.translate(
-                  offset: Offset(0, style.elevation * _animation.value),
+                  offset: Offset(0, style.elevation * press.animation.value),
                   child: face,
                 ),
               ),
@@ -571,7 +501,7 @@ class _BouncyButtonState extends State<BouncyButton>
     if (animationConfig.animateOpacity) {
       content = AnimatedOpacity(
         opacity: enabled ? style.opacity : style.opacity * 0.6,
-        duration: _reduceMotion ? Duration.zero : animationConfig.duration,
+        duration: reduceMotion ? Duration.zero : animationConfig.duration,
         child: content,
       );
     } else if (style.opacity < 1.0) {
@@ -593,122 +523,35 @@ class _BouncyButtonState extends State<BouncyButton>
   Widget build(BuildContext context) {
     final style = _style;
     final interaction = _interaction;
-    final enabled = _isEnabled;
-    final hasLongPress = enabled && widget.onLongPress != null;
+    final animation = _animationConfig;
 
-    Widget button = Semantics(
-      container: true,
-      button: true,
-      enabled: enabled,
-      label: widget.semanticLabel,
-      onTap: enabled ? _activate : null,
-      onLongPress: hasLongPress ? widget.onLongPress : null,
-      child: FocusableActionDetector(
-        enabled: enabled,
-        focusNode: widget.focusNode,
-        autofocus: widget.autofocus,
-        mouseCursor: _cursor(interaction),
-        actions: <Type, Action<Intent>>{
-          ActivateIntent: CallbackAction<ActivateIntent>(
-            onInvoke: (_) => _activate(),
-          ),
-          ButtonActivateIntent: CallbackAction<ButtonActivateIntent>(
-            onInvoke: (_) => _activate(),
-          ),
-        },
-        onShowHoverHighlight: (value) => setState(() => _showHover = value),
-        onShowFocusHighlight: (value) => setState(() => _showFocus = value),
-        child: ExcludeSemantics(
-          excluding: widget.semanticLabel != null,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            onTapDown: enabled ? (_) => _press() : null,
-            onTapUp: enabled ? (_) => _release(completed: true) : null,
-            onTap: enabled ? widget.onPressed : null,
-            onTapCancel: enabled ? () => _release(completed: false) : null,
-            onLongPressStart: hasLongPress
-                ? (_) {
-                    _isLongPressing = true;
-                    _press(withHaptics: false);
-                  }
-                : null,
-            onLongPress: hasLongPress ? widget.onLongPress : null,
-            onLongPressEnd: hasLongPress
-                ? (_) {
-                    _isLongPressing = false;
-                    _release(completed: true);
-                  }
-                : null,
-            onLongPressCancel: hasLongPress
-                ? () {
-                    // Also fires for ordinary taps, which release themselves.
-                    if (_isLongPressing) {
-                      _isLongPressing = false;
-                      _release(completed: false);
-                    }
-                  }
-                : null,
-            child: _buildBody(context, style, interaction),
-          ),
-        ),
-      ),
+    Widget button = PressCore(
+      onTap: widget.onPressed,
+      onLongPress: widget.onLongPress,
+      onTapDown: widget.onTapDown,
+      onTapUp: widget.onTapUp,
+      onTapCancel: widget.onTapCancel,
+      enabled: widget.enabled,
+      duration: animation.duration,
+      reverseDuration: animation.reverseDuration,
+      curve: animation.curve,
+      reverseCurve: animation.reverseCurve,
+      haptic: interaction.enableHapticFeedback
+          ? interaction.hapticFeedbackType
+          : null,
+      cursor: _cursor(interaction),
+      hitTestBehavior: widget.hitTestBehavior,
+      focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
+      semanticLabel: widget.semanticLabel,
+      labelReplacesChildSemantics: true,
+      builder: (context, press) =>
+          _buildBody(context, style, interaction, animation, press),
     );
 
     if (style.margin != null) {
       button = Padding(padding: style.margin!, child: button);
     }
     return button;
-  }
-}
-
-/// Applies animation transformations to the button
-class _AnimationTransformer extends StatelessWidget {
-  const _AnimationTransformer({
-    required this.animation,
-    required this.animationValue,
-    required this.reduceMotion,
-    required this.child,
-  });
-  final BouncyButtonAnimation animation;
-  final double animationValue;
-  final bool reduceMotion;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    if (reduceMotion) {
-      return child;
-    }
-    switch (animation.type) {
-      case BouncyButtonAnimationType.scale:
-      case BouncyButtonAnimationType.bounce:
-        final scale = 1.0 - (animationValue * (1.0 - animation.scaleAmount));
-        return Transform.scale(
-          scale: scale,
-          child: child,
-        );
-
-      case BouncyButtonAnimationType.rotation:
-        return Transform.rotate(
-          angle: animationValue * animation.rotationAngle,
-          child: child,
-        );
-
-      case BouncyButtonAnimationType.fade:
-        return Opacity(
-          opacity: (1.0 - (animationValue * 0.2)).clamp(0.0, 1.0),
-          child: child,
-        );
-
-      case BouncyButtonAnimationType.slide:
-        return Transform.translate(
-          offset: Offset(animationValue * 2, 0),
-          child: child,
-        );
-
-      case BouncyButtonAnimationType.depth:
-        return child;
-    }
   }
 }
