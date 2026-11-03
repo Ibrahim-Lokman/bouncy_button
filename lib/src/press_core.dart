@@ -99,6 +99,11 @@ class PressCore extends StatefulWidget {
     this.onPressSound,
     this.cooldown,
     this.tooltip,
+    this.semanticHint,
+    this.isSelected,
+    this.expanded,
+    this.statesController,
+    this.onFocusHighlightChange,
   });
 
   /// Builds the control. Called when state changes, not on animation frames.
@@ -194,6 +199,24 @@ class PressCore extends StatefulWidget {
   /// A short description, given to screen readers as the tooltip.
   final String? tooltip;
 
+  /// A screen reader hint, read after the label and state.
+  final String? semanticHint;
+
+  /// Whether a toggle is on, or null if the control is not a toggle. Screen
+  /// readers announce it as checked or not checked.
+  final bool? isSelected;
+
+  /// Whether a menu or section the control opens is showing, or null if it
+  /// opens nothing.
+  final bool? expanded;
+
+  /// Updated with the pressed, hovered, focused, disabled, and selected
+  /// states.
+  final WidgetStatesController? statesController;
+
+  /// Called when the keyboard focus highlight starts or stops.
+  final ValueChanged<bool>? onFocusHighlightChange;
+
   @override
   State<PressCore> createState() => _PressCoreState();
 }
@@ -257,6 +280,23 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     _controller = AnimationController(vsync: this)
       ..addStatusListener(_handleAnimationStatus);
     _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
+    _syncStates();
+  }
+
+  bool _hasFocus = false;
+
+  /// Copies the current states to [PressCore.statesController].
+  void _syncStates() {
+    final controller = widget.statesController;
+    if (controller == null) {
+      return;
+    }
+    controller
+      ..update(WidgetState.pressed, _isPressed)
+      ..update(WidgetState.hovered, _showHover)
+      ..update(WidgetState.focused, _hasFocus)
+      ..update(WidgetState.disabled, !_isEnabled)
+      ..update(WidgetState.selected, widget.isSelected ?? false);
   }
 
   @override
@@ -271,6 +311,9 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     _syncAnimation();
     if ((oldWidget.spring == null) != (widget.spring == null)) {
       _switchDriver();
+    }
+    if (!identical(oldWidget.statesController, widget.statesController)) {
+      oldWidget.statesController?.value = <WidgetState>{};
     }
     // The gesture callbacks are about to be removed, so nothing else will
     // release a press that is in progress.
@@ -288,6 +331,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
         }
       });
     }
+    _syncStates();
   }
 
   @override
@@ -474,6 +518,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     // A new press takes over from a quick tap that is still finishing.
     _releasePending = false;
     setState(() => _isPressed = true);
+    _syncStates();
     _driveDown();
     if (withHaptics) {
       _provideHapticFeedback();
@@ -489,6 +534,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     }
     _endOwnership();
     setState(() => _isPressed = false);
+    _syncStates();
     // A quick tap can end before the first animation frame. Letting the press
     // run to the end keeps it visible.
     if (completed && _stillGoingDown) {
@@ -593,6 +639,9 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       enabled: widget.semanticsButton ? enabled : null,
       label: widget.semanticLabel,
       tooltip: widget.tooltip,
+      hint: widget.semanticHint,
+      checked: widget.isSelected,
+      expanded: widget.expanded,
       value: widget.semanticValue,
       liveRegion: widget.semanticValue != null,
       onTap: hasTap ? _activate : null,
@@ -622,9 +671,17 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
         },
         onShowHoverHighlight: (value) {
           setState(() => _showHover = value);
+          _syncStates();
           widget.onHoverChange?.call(value);
         },
-        onShowFocusHighlight: (value) => setState(() => _showFocus = value),
+        onShowFocusHighlight: (value) {
+          setState(() => _showFocus = value);
+          widget.onFocusHighlightChange?.call(value);
+        },
+        onFocusChange: (value) {
+          _hasFocus = value;
+          _syncStates();
+        },
         child: ExcludeSemantics(
           excluding: labelReplacesChild,
           child: Listener(

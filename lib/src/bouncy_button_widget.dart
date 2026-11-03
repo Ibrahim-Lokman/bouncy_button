@@ -15,7 +15,7 @@ import 'press_transform.dart';
 import 'theme.dart';
 import 'utils.dart';
 
-enum _Variant { standard, primary, secondary, tertiary }
+enum _Variant { standard, primary, secondary, tertiary, icon }
 
 /// A highly customizable button widget with engaging 3D depth effects,
 /// smooth animations, and extensive styling options.
@@ -66,6 +66,10 @@ class BouncyButton extends StatefulWidget {
     this.leading,
     this.trailing,
     this.gap = 8,
+    this.isSelected,
+    this.expanded,
+    this.disabledReason,
+    this.statesController,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -103,6 +107,10 @@ class BouncyButton extends StatefulWidget {
     this.leading,
     this.trailing,
     this.gap = 8,
+    this.isSelected,
+    this.expanded,
+    this.disabledReason,
+    this.statesController,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -144,6 +152,10 @@ class BouncyButton extends StatefulWidget {
     this.leading,
     this.trailing,
     this.gap = 8,
+    this.isSelected,
+    this.expanded,
+    this.disabledReason,
+    this.statesController,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -185,11 +197,71 @@ class BouncyButton extends StatefulWidget {
     this.leading,
     this.trailing,
     this.gap = 8,
+    this.isSelected,
+    this.expanded,
+    this.disabledReason,
+    this.statesController,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
         ),
         _variant = _Variant.tertiary;
+
+  /// Creates a button that shows only an icon, such as a close or share
+  /// button.
+  ///
+  /// The [tooltip] is required, because an icon alone gives screen readers
+  /// nothing to read. It names the button for them, and shows on hover, long
+  /// press, and keyboard focus.
+  ///
+  /// Uses [style] if provided, then [BouncyButtonTheme.iconStyle], then
+  /// [BouncyButtonStyle.icon], which is round with a tap area of at least 48
+  /// by 48.
+  ///
+  /// ```dart
+  /// BouncyButton.icon(
+  ///   onPressed: share,
+  ///   tooltip: 'Share',
+  ///   icon: const Icon(Icons.share),
+  /// )
+  /// ```
+  const BouncyButton.icon({
+    super.key,
+    required Widget icon,
+    required String this.tooltip,
+    this.onPressed,
+    this.onPressedAsync,
+    this.onError,
+    this.isLoading,
+    this.feedback,
+    this.cooldown,
+    this.controller,
+    this.onLongPress,
+    this.onTapDown,
+    this.onTapUp,
+    this.onTapCancel,
+    this.hitTestBehavior,
+    this.style,
+    this.animation,
+    this.interaction,
+    this.enabled = true,
+    this.focusNode,
+    this.autofocus = false,
+    this.isSelected,
+    this.expanded,
+    this.disabledReason,
+    this.statesController,
+  })  : assert(
+          onPressed == null || onPressedAsync == null,
+          'Use either onPressed or onPressedAsync, not both.',
+        ),
+        child = icon,
+        semanticLabel = null,
+        builder = null,
+        leading = null,
+        trailing = null,
+        gap = 8,
+        _variant = _Variant.icon;
 
   final _Variant _variant;
 
@@ -328,6 +400,39 @@ class BouncyButton extends StatefulWidget {
   /// The space between [leading], [child], and [trailing].
   final double gap;
 
+  /// Whether a toggle button is on, such as Mute or Bold, or null if this is
+  /// not a toggle. Screen readers announce it as checked or not checked.
+  ///
+  /// The button looks the same either way, so show the state through [style],
+  /// for example a filled style when on and a tonal one when off. Keep the
+  /// label the same in both states: a label that changes too, such as "Mute"
+  /// and "Unmute", would be read alongside a contradicting state.
+  ///
+  /// ```dart
+  /// BouncyButton(
+  ///   isSelected: muted,
+  ///   onPressed: () => setState(() => muted = !muted),
+  ///   style: muted ? BouncyButtonStyle.primary : BouncyButtonStyle.tonal,
+  ///   child: const Text('Mute'),
+  /// )
+  /// ```
+  final bool? isSelected;
+
+  /// Whether a menu or section this button opens is showing, or null if it
+  /// opens nothing. Screen readers announce it as expanded or collapsed.
+  final bool? expanded;
+
+  /// Why the button is disabled, such as "Add a card first".
+  ///
+  /// While the button is disabled, it is shown as a tooltip and read by
+  /// screen readers after the label, so people know what to do. Not used
+  /// while the button is enabled.
+  final String? disabledReason;
+
+  /// Updated with the pressed, hovered, focused, disabled, and selected
+  /// states, for building visuals or testing.
+  final WidgetStatesController? statesController;
+
   @override
   State<BouncyButton> createState() => _BouncyButtonState();
 }
@@ -439,6 +544,36 @@ class _BouncyButtonState extends State<BouncyButton>
     }
   }
 
+  /// Shows the tooltip while the button has keyboard focus, as a mouse
+  /// hover would.
+  final GlobalKey<TooltipState> _tooltipKey = GlobalKey<TooltipState>();
+
+  /// Keeps the core's state, such as focus and a cooldown, when a tooltip is
+  /// added or removed around it.
+  final GlobalKey _coreKey = GlobalKey();
+  bool _tooltipShownByFocus = false;
+
+  void _handleFocusHighlight(bool focused) {
+    if (focused) {
+      _tooltipShownByFocus =
+          _tooltipKey.currentState?.ensureTooltipVisible() ?? false;
+    } else if (_tooltipShownByFocus) {
+      _tooltipShownByFocus = false;
+      Tooltip.dismissAllToolTips();
+    }
+  }
+
+  /// Whether the app disabled the button, as opposed to a group lock.
+  bool get _disabledByApp =>
+      !widget.enabled ||
+      (widget.onPressed == null &&
+          widget.onPressedAsync == null &&
+          widget.onLongPress == null);
+
+  /// The reason to show, while the app keeps the button disabled.
+  String? get _activeDisabledReason =>
+      _disabledByApp ? widget.disabledReason : null;
+
   void _handleHover(bool hovered) {
     if (hovered) {
       _hover.forward();
@@ -473,6 +608,7 @@ class _BouncyButtonState extends State<BouncyButton>
           _Variant.secondary =>
             theme?.secondaryStyle ?? BouncyButtonStyle.secondary,
           _Variant.tertiary => theme?.tertiaryStyle ?? BouncyButtonStyle.flat,
+          _Variant.icon => theme?.iconStyle ?? BouncyButtonStyle.icon,
         };
   }
 
@@ -1069,6 +1205,11 @@ class _BouncyButtonState extends State<BouncyButton>
         style.width ?? (style.shape == BoxShape.circle ? style.height : null);
     if (width != null) {
       content = SizedBox(width: width, child: content);
+    } else if (style.minWidth != null) {
+      content = ConstrainedBox(
+        constraints: BoxConstraints(minWidth: style.minWidth!),
+        child: content,
+      );
     }
 
     if (animationConfig.animateOpacity) {
@@ -1113,6 +1254,7 @@ class _BouncyButtonState extends State<BouncyButton>
     final isAsync = widget.onPressedAsync != null;
     _groupLocked = isAsync && watchGroupLock(context);
     Widget button = PressCore(
+      key: _coreKey,
       onTap: widget.onPressed ?? (isAsync ? _runFromTap : null),
       busy: asyncBusy,
       semanticValue: _feedback.labelFor(status),
@@ -1140,6 +1282,11 @@ class _BouncyButtonState extends State<BouncyButton>
       focusNode: widget.focusNode,
       autofocus: widget.autofocus,
       semanticLabel: widget.semanticLabel,
+      semanticHint: _activeDisabledReason,
+      isSelected: widget.isSelected,
+      expanded: widget.expanded,
+      statesController: widget.statesController,
+      onFocusHighlightChange: _handleFocusHighlight,
       labelReplacesChildSemantics: true,
       builder: (context, press) {
         _coreActivate = press.handleActivate;
@@ -1147,10 +1294,11 @@ class _BouncyButtonState extends State<BouncyButton>
       },
     );
 
-    final tooltip = widget.tooltip;
+    final tooltip = _activeDisabledReason ?? widget.tooltip;
     if (tooltip != null) {
-      // The core gives screen readers the tooltip, so this one doesn't.
+      // The core gives screen readers the tooltip and reason, so this doesn't.
       button = Tooltip(
+        key: _tooltipKey,
         message: tooltip,
         excludeFromSemantics: true,
         child: button,

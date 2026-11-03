@@ -49,6 +49,9 @@ class BouncyPressable extends StatelessWidget {
     this.semanticLabel,
     this.semanticsButton = true,
     this.cooldown,
+    this.isSelected,
+    this.expanded,
+    this.statesController,
   }) : assert(
           scaleFactor >= 0.0 && scaleFactor <= 1.0,
           'scaleFactor must be between 0.0 and 1.0.',
@@ -139,6 +142,22 @@ class BouncyPressable extends StatelessWidget {
   /// quick double tap doesn't run it twice.
   final Duration? cooldown;
 
+  /// Whether a toggle is on, such as a favorite, or null if this is not a
+  /// toggle. Screen readers announce it as checked or not checked.
+  ///
+  /// Keep the label the same in both states, and change only this. A label
+  /// that changes too, such as "Add favorite" and "Remove favorite", would be
+  /// read alongside a contradicting state.
+  final bool? isSelected;
+
+  /// Whether a menu or section this opens is showing, or null if it opens
+  /// nothing. Screen readers announce it as expanded or collapsed.
+  final bool? expanded;
+
+  /// Updated with the pressed, hovered, focused, disabled, and selected
+  /// states, for building visuals or testing.
+  final WidgetStatesController? statesController;
+
   @override
   Widget build(BuildContext context) {
     return PressCore(
@@ -163,6 +182,9 @@ class BouncyPressable extends StatelessWidget {
       semanticLabel: semanticLabel,
       semanticsButton: semanticsButton,
       cooldown: cooldown,
+      isSelected: isSelected,
+      expanded: expanded,
+      statesController: statesController,
       builder: (context, press) {
         return AnimatedBuilder(
           animation: press.animation,

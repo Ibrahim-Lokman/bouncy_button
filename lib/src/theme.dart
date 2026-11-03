@@ -20,6 +20,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
     this.primaryStyle,
     this.secondaryStyle,
     this.tertiaryStyle,
+    this.iconStyle,
     this.defaultAnimation,
     this.defaultInteraction,
     this.defaultFeedback,
@@ -35,6 +36,9 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
   /// Style for [BouncyButton.tertiary] when it is not given a style.
   final BouncyButtonStyle? tertiaryStyle;
 
+  /// Style for [BouncyButton.icon] when it is not given a style.
+  final BouncyButtonStyle? iconStyle;
+
   /// Default animation configuration.
   final BouncyButtonAnimation? defaultAnimation;
 
@@ -49,6 +53,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
     BouncyButtonStyle? primaryStyle,
     BouncyButtonStyle? secondaryStyle,
     BouncyButtonStyle? tertiaryStyle,
+    BouncyButtonStyle? iconStyle,
     BouncyButtonAnimation? defaultAnimation,
     BouncyButtonInteraction? defaultInteraction,
     BouncyButtonFeedback? defaultFeedback,
@@ -57,6 +62,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
       primaryStyle: primaryStyle ?? this.primaryStyle,
       secondaryStyle: secondaryStyle ?? this.secondaryStyle,
       tertiaryStyle: tertiaryStyle ?? this.tertiaryStyle,
+      iconStyle: iconStyle ?? this.iconStyle,
       defaultAnimation: defaultAnimation ?? this.defaultAnimation,
       defaultInteraction: defaultInteraction ?? this.defaultInteraction,
       defaultFeedback: defaultFeedback ?? this.defaultFeedback,
@@ -90,6 +96,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
         other.primaryStyle == primaryStyle &&
         other.secondaryStyle == secondaryStyle &&
         other.tertiaryStyle == tertiaryStyle &&
+        other.iconStyle == iconStyle &&
         other.defaultAnimation == defaultAnimation &&
         other.defaultInteraction == defaultInteraction &&
         other.defaultFeedback == defaultFeedback;
@@ -100,6 +107,7 @@ class BouncyButtonTheme extends ThemeExtension<BouncyButtonTheme> {
         primaryStyle,
         secondaryStyle,
         tertiaryStyle,
+        iconStyle,
         defaultAnimation,
         defaultInteraction,
         defaultFeedback,

@@ -68,6 +68,8 @@ class BouncyButtonGroup<T> extends StatelessWidget {
     this.interaction,
     this.spacing = 2,
     this.expand = true,
+    this.showSelectedIcon = false,
+    this.selectedIcon,
   }) : assert(segments.length > 0, 'A group needs at least one segment.');
 
   /// The options, in order.
@@ -103,6 +105,17 @@ class BouncyButtonGroup<T> extends StatelessWidget {
   /// Whether segments share the available width equally. Ignored where the
   /// width is unbounded, such as in a horizontal scroll view.
   final bool expand;
+
+  /// Whether selected segments show a check mark before their label, in
+  /// place of their icon.
+  ///
+  /// The filled and tonal faces differ by color, which some people can't
+  /// tell apart. The check mark shows the selection another way. Segments
+  /// with only an icon keep it.
+  final bool showSelectedIcon;
+
+  /// The icon for [showSelectedIcon]. Defaults to a check mark.
+  final Widget? selectedIcon;
 
   void _handlePressed(T value) {
     final next = Set<T>.of(selected);
@@ -168,7 +181,11 @@ class BouncyButtonGroup<T> extends StatelessWidget {
                 ),
                 interaction: segmentInteraction,
                 semanticLabel: segment.semanticLabel,
-                leading: segment.label != null ? segment.icon : null,
+                leading: segment.label == null
+                    ? null
+                    : isSelected && showSelectedIcon
+                        ? selectedIcon ?? const Icon(Icons.check)
+                        : segment.icon,
                 child: segment.label ?? segment.icon!,
               ),
             ),

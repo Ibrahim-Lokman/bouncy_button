@@ -45,6 +45,7 @@ class BouncyButtonStyle {
     this.pressedBorderRadius,
     this.tone = BouncyButtonTone.normal,
     this.minTapTarget,
+    this.minWidth,
   });
 
   /// A light depth shade, for [shadowDarkness].
@@ -236,6 +237,12 @@ class BouncyButtonStyle {
   /// button itself.
   final double? minTapTarget;
 
+  /// The smallest width of the button.
+  ///
+  /// Unlike [width], the button still grows to fit longer content, such as a
+  /// translated label or large system text. Not used when [width] is set.
+  final double? minWidth;
+
   /// Creates a copy with modified fields.
   BouncyButtonStyle copyWith({
     double? height,
@@ -269,6 +276,7 @@ class BouncyButtonStyle {
     BorderRadiusGeometry? pressedBorderRadius,
     BouncyButtonTone? tone,
     double? minTapTarget,
+    double? minWidth,
   }) {
     return BouncyButtonStyle(
       height: height ?? this.height,
@@ -302,6 +310,7 @@ class BouncyButtonStyle {
       pressedBorderRadius: pressedBorderRadius ?? this.pressedBorderRadius,
       tone: tone ?? this.tone,
       minTapTarget: minTapTarget ?? this.minTapTarget,
+      minWidth: minWidth ?? this.minWidth,
     );
   }
 
@@ -341,7 +350,8 @@ class BouncyButtonStyle {
         other.iconSize == iconSize &&
         other.pressedBorderRadius == pressedBorderRadius &&
         other.tone == tone &&
-        other.minTapTarget == minTapTarget;
+        other.minTapTarget == minTapTarget &&
+        other.minWidth == minWidth;
   }
 
   @override
@@ -377,6 +387,7 @@ class BouncyButtonStyle {
         pressedBorderRadius,
         tone,
         minTapTarget,
+        minWidth,
       ]);
 
   /// Primary button style with standard elevation and padding.
@@ -462,6 +473,18 @@ class BouncyButtonStyle {
     borderRadius: BorderRadius.all(Radius.circular(16)),
     padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
     fill: BouncyButtonFill.glass,
+  );
+
+  /// Style for `BouncyButton.icon`: a round, tonal face with a tap area of
+  /// at least 48 by 48.
+  static const BouncyButtonStyle icon = BouncyButtonStyle(
+    height: 48,
+    elevation: 4,
+    shape: BoxShape.circle,
+    fill: BouncyButtonFill.tonal,
+    padding: EdgeInsets.all(12),
+    iconSize: 24,
+    minTapTarget: 48,
   );
 
   /// Circular button style for icon buttons.
