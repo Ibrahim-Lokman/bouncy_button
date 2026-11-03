@@ -17,7 +17,7 @@
 - **It feels real.** The button face sits on a darker layer, like a key on a keyboard, and sinks into it when pressed. Even the quickest tap shows the full press.
 - **It's safe for real actions.** Give it a function that saves or pays, and it shows a spinner, then a tick or an error. It ignores extra taps while it works, so nothing is sent twice.
 - **It works with what you already have.** Add the same press to any card or image, or add double-tap protection to the Material and Cupertino buttons you already use.
-- **It's accessible out of the box.** Screen readers, keyboards, large text, and the "reduce motion" setting all work with no extra code.
+- **It's accessible out of the box.** Screen readers, keyboards, large text, and the "reduce motion" setting all work with no extra code. In debug builds, it also warns you about common mistakes, such as a missing label or hard-to-read colors.
 - **It's light.** No dependencies beyond Flutter, and it runs on Android, iOS, web, macOS, Windows, and Linux.
 
 ## Getting started
@@ -26,7 +26,7 @@ Add the package:
 
 ```yaml
 dependencies:
-  bouncy_button: ^2.1.0
+  bouncy_button: ^2.2.0
 ```
 
 Then use it like any button:
@@ -48,11 +48,13 @@ With no style set, the button uses your app's theme colors and picks a readable 
 - [A style for every action](#a-style-for-every-action)
 - [Loading, success, and error](#loading-success-and-error)
 - [No accidental double taps](#no-accidental-double-taps)
+- [Timeouts and confirmation](#timeouts-and-confirmation)
 - [Protect the buttons you already have](#protect-the-buttons-you-already-have)
 - [The bounce on any widget](#the-bounce-on-any-widget)
 - [Button groups](#button-groups)
 - [Motion that feels alive](#motion-that-feels-alive)
 - [Built for everyone](#built-for-everyone)
+- [Catch mistakes early](#catch-mistakes-early)
 - [Style your whole app at once](#style-your-whole-app-at-once)
 - [More control](#more-control)
 
@@ -137,6 +139,30 @@ BouncyButton(
 
 For `onPressedAsync`, the cooldown starts once the button is ready again.
 
+Two tips for forms and payments:
+
+- **Enter in a text field:** call `controller.press()` from `onSubmitted`, through a `BouncyButtonController`. Enter and taps then share the same protection.
+- **Payments:** the button stops repeated taps, but not a retry after a timeout, or a second device. Send an idempotency key with the request, created once per order, so your server charges only once. The example app's checkout shows how.
+
+### Timeouts and confirmation
+
+Sometimes a request never answers, and a spinner that never stops leaves people stuck. Set a `timeout`, and the button gives up after that long. It shows the error, passes a `TimeoutException` to `onError`, and can be pressed again.
+
+For actions that can't be undone, `confirm` asks first. The action runs only if it returns `true`. While your dialog is open, the button ignores taps, so a double tap can't open two dialogs.
+
+```dart
+BouncyButton(
+  onPressedAsync: () => api.deleteAccount(),
+  timeout: const Duration(seconds: 15),
+  confirm: () async =>
+      await showDialog<bool>(context: context, builder: confirmDialog) ?? false,
+  style: BouncyButtonStyle.destructive,
+  child: const Text('Delete account'),
+)
+```
+
+`confirm` also works with a plain `onPressed`, and both options work on `BouncyAsyncBuilder`.
+
 ### Protect the buttons you already have
 
 You don't have to change your design to get these protections. `BouncyAsyncBuilder` wraps the buttons you already use, from Material, Cupertino, or your own design system:
@@ -184,7 +210,7 @@ BouncyButtonGroup<String>(
 )
 ```
 
-Screen readers announce which option is selected.
+Screen readers announce which option is selected. Set `showSelectedIcon: true` to also mark it with a check, for people who can't easily tell the colors apart.
 
 ### Motion that feels alive
 
@@ -199,14 +225,49 @@ People who turn on "reduce motion" in their system settings get instant, still b
 These work automatically, with no extra code:
 
 - **Screen readers** announce each button, and its loading, success, and error states.
-- **Keyboards:** Tab moves between buttons, Enter or Space presses them, and a focus ring shows where you are.
+- **Keyboards:** Tab moves between buttons, and Enter or Space presses them, once even when held down. A focus ring shows where you are, thicker in high contrast mode.
 - **Large text:** buttons grow to fit bigger system fonts instead of cutting words off.
 - **Reduce motion** is respected.
 
-Two options help further:
+A few options tell people more:
 
-- `tooltip: 'Add to favorites'` explains a button that only has an icon, on hover, long press, and to screen readers.
-- `BouncyButtonStyle(minTapTarget: 48)` makes a small button easier to hit without changing how it looks.
+| Option | What it does |
+| --- | --- |
+| `BouncyButton.icon(tooltip: 'Share', ...)` | Names a button that only has an icon. The name also shows on hover, long press, and keyboard focus |
+| `isSelected: muted` | Makes a toggle: screen readers hear "Mute, checked". Keep the label the same, and let this show the state |
+| `expanded: menuOpen` | Tells screen readers whether the menu the button opens is showing |
+| `disabledReason: 'Add a card first'` | Explains why a disabled button can't be used, as a tooltip and to screen readers |
+| `BouncyButtonStyle(minTapTarget: 48)` | Makes a small button easier to hit, without changing how it looks |
+
+### Catch mistakes early
+
+In debug builds, Bouncy Button prints a warning when a button will be hard to use. That includes:
+
+- an icon with no label
+- text that's hard to read against the button
+- a tap area smaller than 48 by 48
+- a screen reader label that leaves out the text people see
+- English screen reader labels in a translated app
+
+Each warning explains the fix and appears once. Release builds leave the checks out. To turn them off, set `debugBouncyChecksEnabled = false`.
+
+You can check buttons in your own tests too:
+
+```dart
+import 'package:bouncy_button/testing.dart';
+
+testWidgets('Pay is accessible', (tester) async {
+  var payments = 0;
+  await tester.pumpWidget(MyCheckout(onPay: () async => payments++));
+  await expectAccessibleButton(
+    tester,
+    find.text('Pay'),
+    pressCount: () => payments,
+  );
+});
+```
+
+`expectAccessibleButton` runs Flutter's tap target, label, and contrast checks. With `pressCount`, it also makes sure a quick double tap and a held Enter key each pay only once.
 
 ### Style your whole app at once
 
@@ -247,6 +308,7 @@ The full API, with every option, is on [pub.dev](https://pub.dev/documentation/b
 | `fill` | `filled`, `tonal`, `outlined`, `ghost`, or `glass` |
 | `tone` | `normal` or `destructive` |
 | `height`, `width` | Minimum height, and width. Leave `width` empty to fit the label, or use `double.infinity` to fill the space |
+| `minWidth` | Smallest width. Unlike `width`, longer labels still fit |
 | `elevation`, `shadowDarkness` | How deep the press goes, and how dark the layer underneath is |
 | `borderRadius`, `pressedBorderRadius` | Corners at rest, and while pressed |
 | `padding`, `textStyle`, `iconSize` | Inner spacing, text style, and icon size |
@@ -291,6 +353,14 @@ flutter run
 ```
 
 ## Upgrading
+
+### From 2.1 to 2.2
+
+Nothing needs to change in your code. Three things work differently:
+
+- **Held keys:** holding Enter or Space on a button presses it once, instead of repeating.
+- **Button groups:** segments are announced as "checked" or "not checked", like Flutter's `SegmentedButton`. Tests that look for a selected flag on a segment should check `isChecked` instead.
+- **Warnings:** your debug console may show the new warnings. Each one describes a real problem, but you can turn them off with `debugBouncyChecksEnabled = false`.
 
 ### From 1.x to 2.0
 

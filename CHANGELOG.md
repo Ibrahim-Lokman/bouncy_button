@@ -1,3 +1,32 @@
+## [2.2.0] - 2026-11-03
+
+This release goes through a checklist of common button mistakes, and makes each one either impossible or easy to spot.
+
+### Added
+
+- `timeout` on `BouncyButton` and `BouncyAsyncBuilder`. An action that runs too long shows an error, passes a `TimeoutException` to `onError`, and frees the button and any group lock. Its late result is ignored, but a late error is still reported. Off by default.
+- `confirm` on `BouncyButton` and `BouncyAsyncBuilder`, asked before the action runs, such as to show a dialog. The action runs only on `true`. While it waits, presses are ignored and no spinner shows.
+- `BouncyButton.icon`, which requires a `tooltip`, so an icon-only button always has a name. It uses the new `BouncyButtonStyle.icon` preset, which is round with a 48 by 48 tap area, or `BouncyButtonTheme.iconStyle`.
+- `isSelected` on `BouncyButton` and `BouncyPressable`, for toggles. Screen readers announce them as checked or not checked.
+- `expanded` on `BouncyButton` and `BouncyPressable`, for buttons that open a menu or section.
+- `BouncyButton.disabledReason`, shown as a tooltip and read by screen readers while the button is disabled.
+- `statesController` on `BouncyButton` and `BouncyPressable`, which follows pressed, hovered, focused, disabled, and selected.
+- `BouncyButtonStyle.minWidth`, a minimum width that still lets longer labels fit.
+- `BouncyButtonGroup.showSelectedIcon` and `selectedIcon`, which mark selected segments with a check, so the selection doesn't rely on color alone.
+- Tooltips now also show while a button has keyboard focus.
+- Debug-only warnings, printed once each, for an icon-only button with no label, a `semanticLabel` that leaves out the visible text, a tappable widget inside a button, a toggle whose text changes with its state, text below WCAG contrast, a tap area smaller than 48 by 48 (44 by 44 on Apple platforms), and English screen reader labels in an app using another language. Turn them off with `debugBouncyChecksEnabled = false`.
+- `package:bouncy_button/testing.dart` with `expectAccessibleButton`, which checks a button with Flutter's accessibility guidelines and makes sure a double tap and a held Enter key each run it once. `flutter_test` is now a dependency for it. Release builds don't include it.
+
+### Fixed
+
+- Holding Enter, Space, or another activation key pressed a button over and over, because the app's shortcuts turned each key repeat into another press. It now presses once.
+- A button with a controller could report "can only be attached to one widget at a time" when a list moved it to another position.
+
+### Changed
+
+- `BouncyButtonGroup` segments use checked semantics, as Flutter's `SegmentedButton` does, so screen readers also announce unselected ones. Tests that looked for a selected flag on a segment should check `isChecked`.
+- The keyboard focus ring is 3 pixels wide instead of 2 in high contrast mode.
+
 ## [2.1.2] - 2026-11-02
 
 - The Example tab on pub.dev now shows a one-screen tour of the main features, instead of the demo app's launcher. No code changes.

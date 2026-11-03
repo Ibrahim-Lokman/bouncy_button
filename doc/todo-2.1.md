@@ -40,7 +40,7 @@ Source: [Apple Human Interface Guidelines, Buttons](https://developer.apple.com/
 - [ ] **Check on real devices:** springs, haptics, sounds, glass, and a screen reader (TalkBack and VoiceOver) haven't been checked on real hardware or by a person.
 - [x] **Rename generic public names:** `HapticFeedbackType` and `GradientExtension` could clash with other packages. Add prefixed names and deprecate the old ones, which keeps 2.1 non-breaking.
 - [x] **Continuous integration:** run analysis and tests on every push, on Flutter 3.27 and the latest stable release. Added in `.github/workflows/ci.yml`; it runs for the first time once pushed.
-- [ ] **Golden tests:** add screenshot tests for each fill and state, so visual bugs like the 2.0 ghost and glass depth layer are caught automatically.
+- [x] **Golden tests:** add screenshot tests for each fill and state, so visual bugs like the 2.0 ghost and glass depth layer are caught automatically. Done in 2.2, in `test/goldens/`.
 - [x] **GitHub description:** the repository's description still uses the 1.x wording. Match it to the pub.dev description.
 
 ## New features
