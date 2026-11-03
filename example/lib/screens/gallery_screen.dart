@@ -27,6 +27,17 @@ class _GalleryScreenState extends State<GalleryScreen> {
   }
 
   bool _externalLoading = false;
+  bool _muted = false;
+  String _sort = 'Newest';
+  bool _sortOpen = false;
+
+  void _setSortOpen(bool open) {
+    // The menu can close as the screen goes away.
+    if (mounted) {
+      setState(() => _sortOpen = open);
+    }
+  }
+
   Set<String> _view = {'week'};
   Set<String> _formats = {'bold'};
 
@@ -46,6 +57,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         _fills(),
         _sizes(),
         _icons(),
+        _accessibility(),
         _colors(),
         _sizing(),
         _states(),
@@ -231,7 +243,10 @@ class _GalleryScreenState extends State<GalleryScreen> {
         BouncyButton(
           onPressed: _log('Outlined teal'),
           style: BouncyButtonStyle.outlined.copyWith(
-            backgroundColor: Colors.teal.shade700,
+            // Lighter in dark themes, so the text stays readable.
+            backgroundColor: Theme.of(context).brightness == Brightness.dark
+                ? Colors.teal.shade200
+                : Colors.teal.shade700,
           ),
           child: const Text('outlined, custom color'),
         ),
@@ -261,7 +276,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         BouncyButton(
           onPressed: _log('simple'),
           style: BouncyButtonStyle.simple(
-            color: Colors.deepOrange.shade800,
+            color: Colors.deepOrange.shade900,
             width: 180,
           ),
           child: const Text('BouncyButtonStyle.simple'),
@@ -299,6 +314,84 @@ class _GalleryScreenState extends State<GalleryScreen> {
     );
   }
 
+  Widget _accessibility() {
+    return DemoSection(
+      title: 'Accessibility',
+      subtitle: 'Screen readers hear names and states, keyboard users see '
+          'tooltips on focus, and small buttons still have room to tap.',
+      children: [
+        // An icon alone gives screen readers nothing to read, so this
+        // constructor requires a tooltip.
+        BouncyButton.icon(
+          onPressed: _log('Share'),
+          tooltip: 'Share',
+          icon: const Icon(Icons.share),
+        ),
+        // The label stays "Mute". Screen readers add "checked" or "not
+        // checked", and the style shows the state.
+        BouncyButton(
+          isSelected: _muted,
+          onPressed: () {
+            setState(() => _muted = !_muted);
+            DemoScope.read(context).log.add(_muted ? 'Muted' : 'Unmuted');
+          },
+          style: BouncyButtonStyle.fromSize(BouncyButtonSize.medium).copyWith(
+            fill: _muted ? BouncyButtonFill.filled : BouncyButtonFill.tonal,
+          ),
+          leading: Icon(_muted ? Icons.volume_off : Icons.volume_up),
+          child: const Text('Mute'),
+        ),
+        // Screen readers hear whether the menu is open.
+        MenuAnchor(
+          onOpen: () => _setSortOpen(true),
+          onClose: () => _setSortOpen(false),
+          menuChildren: [
+            for (final option in ['Newest', 'Price', 'Rating'])
+              MenuItemButton(
+                onPressed: () {
+                  setState(() => _sort = option);
+                  DemoScope.read(context).log.add('Sorted by $option');
+                },
+                child: Text(option),
+              ),
+          ],
+          builder: (context, menu, _) => BouncyButton(
+            expanded: _sortOpen,
+            onPressed: () => menu.isOpen ? menu.close() : menu.open(),
+            style: BouncyButtonStyle.outlined,
+            trailing: Icon(_sortOpen ? Icons.expand_less : Icons.expand_more),
+            child: Text('Sort: $_sort'),
+          ),
+        ),
+        // Tells people why they can't use it, on hover, long press, and to
+        // screen readers.
+        const BouncyButton(
+          disabledReason: 'Sign in to save items',
+          leading: Icon(Icons.bookmark_border),
+          child: Text('Save for later'),
+        ),
+        BouncyButton(
+          onPressed: _log('minWidth'),
+          style: BouncyButtonStyle.fromSize(BouncyButtonSize.medium)
+              .copyWith(minWidth: 160),
+          child: const Text('OK'),
+        ),
+        // Drawn small, but the tap area is 48 by 48.
+        BouncyButton(
+          onPressed: _log('Small with a tap area'),
+          style: const BouncyButtonStyle(
+            height: 32,
+            elevation: 3,
+            padding: EdgeInsets.symmetric(horizontal: 12),
+            textStyle: TextStyle(fontSize: 13),
+            minTapTarget: 48,
+          ),
+          child: const Text('minTapTarget'),
+        ),
+      ],
+    );
+  }
+
   Widget _colors() {
     return DemoSection(
       title: 'Color and decoration',
@@ -306,7 +399,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
       children: [
         BouncyButton(
           onPressed: _log('backgroundColor'),
-          style: const BouncyButtonStyle(backgroundColor: Colors.teal),
+          style: BouncyButtonStyle(backgroundColor: Colors.teal.shade700),
           child: const Text('backgroundColor'),
         ),
         BouncyButton(
@@ -353,9 +446,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
         ),
         BouncyButton(
           onPressed: _log('shadows'),
-          style: const BouncyButtonStyle(
-            backgroundColor: Colors.blueGrey,
-            shadows: [BoxShadow(color: Colors.black38, blurRadius: 10)],
+          style: BouncyButtonStyle(
+            backgroundColor: Colors.blueGrey.shade700,
+            shadows: const [BoxShadow(color: Colors.black38, blurRadius: 10)],
           ),
           child: const Text('shadows'),
         ),
@@ -381,8 +474,8 @@ class _GalleryScreenState extends State<GalleryScreen> {
         ),
         BouncyButton(
           onPressed: _log('opacity'),
-          style: const BouncyButtonStyle(
-            backgroundColor: Colors.teal,
+          style: BouncyButtonStyle(
+            backgroundColor: Colors.teal.shade700,
             opacity: 0.7,
           ),
           child: const Text('opacity'),
@@ -390,7 +483,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
         BouncyButton(
           onPressed: _log('transform'),
           style: BouncyButtonStyle(
-            backgroundColor: Colors.deepOrange.shade800,
+            backgroundColor: Colors.deepOrange.shade900,
             transform: Matrix4.rotationZ(-0.04),
             transformAlignment: Alignment.center,
           ),
@@ -833,9 +926,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
   Widget _groups() {
     return DemoSection(
       title: 'BouncyButtonGroup',
-      subtitle: 'Connected buttons for choosing one option, or several.',
+      subtitle: 'Connected buttons for choosing one option, or several. '
+          'showSelectedIcon marks the choice with more than color.',
       children: [
         BouncyButtonGroup<String>(
+          showSelectedIcon: true,
           segments: const [
             BouncyButtonSegment(value: 'day', label: Text('Day')),
             BouncyButtonSegment(value: 'week', label: Text('Week')),
@@ -1026,7 +1121,12 @@ class _GalleryScreenState extends State<GalleryScreen> {
         BouncyButton(
           onPressed: _log('gradientFromColor'),
           style: BouncyButtonStyle(
-            gradient: BouncyButtonColors.gradientFromColor(base),
+            // A darker base and a small spread keep white text readable on
+            // the light end.
+            gradient: BouncyButtonColors.gradientFromColor(
+              const Color(0xFF303F9F),
+              spread: 0.1,
+            ),
           ),
           child: const Text('gradientFromColor'),
         ),

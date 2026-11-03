@@ -46,6 +46,20 @@ class SettingsScreen extends StatelessWidget {
           onChanged: (value) => settings.emptyCatalog = value,
         ),
         ListTile(
+          title: const Text('Make the next payment slow'),
+          subtitle: const Text(
+            'The card is charged, but the answer takes 30 seconds, so Pay '
+            'gives up after 10. Paying again must not charge twice.',
+          ),
+          trailing: const Icon(Icons.hourglass_bottom),
+          onTap: () {
+            scope.backend.slowNextPayment = true;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('The next payment will be slow')),
+            );
+          },
+        ),
+        ListTile(
           title: const Text('Reset mock data'),
           subtitle: const Text(
             'Restores favorites, clears charges, and clears the event log.',

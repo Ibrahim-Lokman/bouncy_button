@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:bouncy_button/bouncy_button.dart';
 import 'package:flutter/material.dart';
 
@@ -28,7 +31,24 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _card = TextEditingController();
   final _promo = TextEditingController();
 
-  final Map<String, int> _quantities = {'headphones': 1, 'mug': 2};
+  /// Lets Enter in the card field pay through the button, so both share its
+  /// protection against paying twice.
+  final _payController = BouncyButtonController();
+
+  static const Map<String, int> _sampleCart = {'headphones': 1, 'mug': 2};
+  final Map<String, int> _quantities = Map.of(_sampleCart);
+
+  /// Identifies this order to the backend, so a retry can't charge twice.
+  /// It changes whenever the order does.
+  String _orderKey = _newOrderKey();
+
+  static final Random _random = Random();
+
+  static String _newOrderKey() =>
+      'order-${DateTime.now().microsecondsSinceEpoch}-${_random.nextInt(1000000000)}';
+
+  /// Starts a new order key, because the order changed.
+  void _orderChanged() => _orderKey = _newOrderKey();
   int _discountPercent = 0;
   String _delivery = 'standard';
 
@@ -43,6 +63,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _email.dispose();
     _card.dispose();
     _promo.dispose();
+    _payController.dispose();
     super.dispose();
   }
 
@@ -63,6 +84,44 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   void _changeQuantity(String id, int delta) {
     setState(() {
       _quantities[id] = (_quantities[id]! + delta).clamp(1, 9);
+      _orderChanged();
+    });
+  }
+
+  /// Asks before emptying the cart, which can't be undone.
+  Future<bool> _confirmClear() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear your cart?'),
+        content: const Text('This removes everything in it.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep items'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Clear cart'),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
+  }
+
+  void _clearCart() {
+    setState(() {
+      _quantities.clear();
+      _orderChanged();
+    });
+    DemoScope.read(context).log.add('Cart cleared');
+  }
+
+  void _restoreCart() {
+    setState(() {
+      _quantities.addAll(_sampleCart);
+      _orderChanged();
     });
   }
 
@@ -73,7 +132,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     if (!mounted) {
       return;
     }
-    setState(() => _discountPercent = percent);
+    setState(() {
+      _discountPercent = percent;
+      _orderChanged();
+    });
     scope.log.add('Promo applied: $percent% off');
   }
 
@@ -93,6 +155,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final orderId = await scope.backend.placeOrder(
       totalCents: _total,
       cardNumber: _card.text,
+      idempotencyKey: _orderKey,
     );
     if (!mounted) {
       return;
@@ -107,8 +170,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       log.add('Pay blocked: form incomplete');
       return;
     }
-    final message =
-        error is MockApiException ? error.message : 'Something went wrong.';
+    final message = switch (error) {
+      MockApiException() => error.message,
+      TimeoutException() => 'The payment is taking too long. Try again: '
+          'you won\'t be charged twice.',
+      _ => 'Something went wrong.',
+    };
     log.add('Payment failed: $message');
     // Shown under the button rather than in a snack bar, which would cover it.
     setState(() => _payError = message);
@@ -120,6 +187,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       controller.clear();
     }
     setState(() {
+      _orderChanged();
       _orderId = null;
       _discountPercent = 0;
       _delivery = 'standard';
@@ -143,9 +211,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text('Your cart', style: textTheme.titleLarge),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('Your cart', style: textTheme.titleLarge),
+                  ),
+                  if (_quantities.isNotEmpty)
+                    // Asks first, because clearing can't be undone. Flexible,
+                    // so its text wraps at large sizes.
+                    Flexible(
+                      child: BouncyButton(
+                        onPressed: _clearCart,
+                        confirm: _confirmClear,
+                        style: BouncyButtonStyle.destructive.copyWith(
+                          fill: BouncyButtonFill.ghost,
+                        ),
+                        leading: const Icon(Icons.delete_outline),
+                        child: const Text('Clear cart'),
+                      ),
+                    ),
+                ],
+              ),
               const SizedBox(height: 8),
               for (final id in _quantities.keys) _cartLine(id),
+              if (_quantities.isEmpty) ...[
+                const Text('Your cart is empty.'),
+                const SizedBox(height: 12),
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: BouncyButton(
+                    onPressed: _restoreCart,
+                    style: BouncyButtonStyle.outlined,
+                    child: const Text('Add the sample items'),
+                  ),
+                ),
+              ],
               const Divider(height: 32),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,8 +287,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                 ],
                 selected: {_delivery},
-                onSelectionChanged: (selection) =>
-                    setState(() => _delivery = selection.first),
+                onSelectionChanged: (selection) => setState(() {
+                  _delivery = selection.first;
+                  _orderChanged();
+                }),
               ),
               const SizedBox(height: 16),
               _totalLine('Subtotal', _subtotal),
@@ -225,6 +327,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   helperMaxLines: 2,
                 ),
                 keyboardType: TextInputType.number,
+                // Enter pays, through the button's controller, so it can't
+                // pay twice either.
+                textInputAction: TextInputAction.done,
+                onFieldSubmitted: (_) => _payController.press(),
                 validator: (value) =>
                     (value ?? '').replaceAll(' ', '').length == 16
                         ? null
@@ -232,8 +338,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 24),
               BouncyButton.primary(
-                onPressedAsync: _pay,
+                controller: _payController,
+                onPressedAsync: _quantities.isEmpty ? null : _pay,
                 onError: _payFailed,
+                // Gives up on an answer that never comes, so the button
+                // doesn't spin forever.
+                timeout: const Duration(seconds: 10),
+                disabledReason: 'Add something to your cart first',
                 feedback: const BouncyButtonFeedback(
                   loadingText: 'Paying…',
                   minLoadingDuration: Duration(milliseconds: 400),

@@ -52,6 +52,17 @@ class MockBackend {
   int _charges = 0;
   int _orders = 1000;
 
+  /// Orders already placed, by the idempotency key they were sent with.
+  final Map<String, String> _ordersByKey = {};
+
+  /// How late the answer to a slow payment arrives.
+  static const Duration slowAnswer = Duration(seconds: 30);
+
+  /// Whether the next payment goes through but its answer arrives
+  /// [slowAnswer] late, as when a connection stalls. The app gives up
+  /// waiting first, and a retry must not charge again.
+  bool slowNextPayment = false;
+
   /// How many times a card has been charged. Each order should add one.
   int get charges => _charges;
 
@@ -68,6 +79,8 @@ class MockBackend {
   void reset() {
     _script.clear();
     _charges = 0;
+    _ordersByKey.clear();
+    slowNextPayment = false;
     _favorites
       ..clear()
       ..add('keyboard');
@@ -99,17 +112,35 @@ class MockBackend {
   }
 
   /// Charges the card and returns an order number.
+  ///
+  /// Like a real payment API, it takes an [idempotencyKey] that the app
+  /// creates once per order. A request with a key that was already charged
+  /// returns the same order instead of charging again. That is what keeps a
+  /// retry safe when the app never heard back from the first attempt. The
+  /// button only stops repeated taps; this stops repeated requests.
   Future<String> placeOrder({
     required int totalCents,
     required String cardNumber,
+    required String idempotencyKey,
   }) async {
     await _request();
+    final existing = _ordersByKey[idempotencyKey];
+    if (existing != null) {
+      return existing;
+    }
     if (cardNumber.replaceAll(' ', '') == declinedCard) {
       throw const MockApiException(MockFailure.declined);
     }
     _charges++;
     _orders++;
-    return 'ORD-$_orders';
+    final orderId = 'ORD-$_orders';
+    _ordersByKey[idempotencyKey] = orderId;
+    if (slowNextPayment) {
+      // The charge went through, but the answer is late.
+      slowNextPayment = false;
+      await Future<void>.delayed(slowAnswer);
+    }
+    return orderId;
   }
 
   Future<void> _request() async {

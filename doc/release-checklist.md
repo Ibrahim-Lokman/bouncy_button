@@ -31,8 +31,9 @@ Use the example app's Gallery and Checkout screens, with TalkBack on Android and
 | Pay in Checkout | "Loading", or the loading text, as it starts. Then "Done" or "Failed". |
 | The icon-only Share button | "Share". |
 | The Mute toggle | "Mute", then "checked" or "not checked". The word "Mute" doesn't change. |
-| The Sort menu button | "expanded" or "collapsed". |
-| The disabled button with a reason | Its text, "disabled" or "dimmed", then the reason. |
+| The Sort button, before and after opening it | "collapsed", then "expanded". |
+| Save for later, which is disabled | Its text, "disabled" or "dimmed", then "Sign in to save items". |
+| Pay, after Clear cart in Checkout | "disabled" or "dimmed", then "Add something to your cart first". |
 | A button group segment | Its label, "checked" or "not checked", and its position in the group. |
 | A product card in Shop | The card, and then its favorite button as a separate stop. |
 
@@ -53,7 +54,7 @@ In the example's Settings, set the latency to 3 seconds:
 
 - [ ] Double tap Pay. The card is charged once.
 - [ ] Turn on offline mode and pay. The error shows, and Try again works.
-- [ ] Set the next outcome to "hang". After the timeout, the error shows, and a retry still charges the card only once.
+- [ ] Tap "Make the next payment slow", then pay. After 10 seconds the error shows. Pay again: the counter still says the card was charged once.
 
 ## 5. Motion, haptics, and contrast
 

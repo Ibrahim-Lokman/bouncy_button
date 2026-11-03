@@ -417,6 +417,126 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('1'), findsOneWidget);
     });
+
+    testWidgets('a slow payment times out, and paying again charges once',
+        (tester) async {
+      final (_, backend) = await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await fillForm(tester);
+      backend.slowNextPayment = true;
+      await tapPay(tester);
+      await tester.pump();
+      // The card is charged, but the answer doesn't arrive in time.
+      await tester.pump(const Duration(seconds: 10));
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('taking too long'), findsOneWidget);
+      expect(backend.charges, 1);
+
+      // The same order key means the backend returns the first order.
+      await tapPay(tester);
+      await tester.pumpAndSettle();
+      expect(backend.charges, 1);
+      expect(find.textContaining('Order ORD-1001 placed'), findsOneWidget);
+
+      // The first answer arrives at last, and changes nothing.
+      await tester.pump(MockBackend.slowAnswer);
+      await tester.pumpAndSettle();
+      expect(backend.charges, 1);
+    });
+
+    testWidgets('Enter in the card number field pays', (tester) async {
+      final (_, backend) = await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      await fillForm(tester);
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pump();
+      expect(find.text('Paying…'), findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(backend.charges, 1);
+    });
+
+    testWidgets('clearing the cart asks first, and Pay says why it is off',
+        (tester) async {
+      await _pumpApp(tester);
+      await _openTab(tester, 'Checkout');
+      final clear = find.widgetWithText(BouncyButton, 'Clear cart');
+      final dialogClear = find.widgetWithText(TextButton, 'Clear cart');
+
+      await tester.tap(clear);
+      await tester.pumpAndSettle();
+      expect(find.text('Clear your cart?'), findsOneWidget);
+      await tester.tap(find.text('Keep items'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Studio Headphones'), findsOneWidget);
+
+      await tester.tap(clear);
+      await tester.pumpAndSettle();
+      await tester.tap(dialogClear);
+      await tester.pumpAndSettle();
+      expect(find.text('Your cart is empty.'), findsOneWidget);
+      expect(clear, findsNothing);
+
+      final handle = tester.ensureSemantics();
+      await tester.scrollUntilVisible(
+        find.textContaining('Pay \$'),
+        200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      expect(
+        tester.getSemantics(find.textContaining('Pay \$')),
+        // ignore: deprecated_member_use
+        containsSemantics(
+          isEnabled: false,
+          hint: 'Add something to your cart first',
+        ),
+      );
+      handle.dispose();
+
+      await tester.scrollUntilVisible(
+        find.text('Add the sample items'),
+        -200,
+        scrollable: find.byType(Scrollable).hitTestable().first,
+      );
+      await tester.tap(find.text('Add the sample items'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Studio Headphones'), findsOneWidget);
+    });
+  });
+
+  testWidgets('the gallery shows toggle, menu, icon, and disabled buttons',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+    await _pumpApp(tester);
+    final scrollable = find.byType(Scrollable).hitTestable().first;
+    await tester.scrollUntilVisible(find.text('Mute'), 200,
+        scrollable: scrollable);
+    await tester.pumpAndSettle();
+
+    // ignore: deprecated_member_use
+    Matcher checked(bool on) => containsSemantics(isChecked: on);
+    expect(tester.getSemantics(find.text('Mute')), checked(false));
+    await tester.tap(find.text('Mute'));
+    await tester.pumpAndSettle();
+    expect(tester.getSemantics(find.text('Mute')), checked(true));
+
+    // ignore: deprecated_member_use
+    Matcher expanded(bool open) => containsSemantics(isExpanded: open);
+    expect(tester.getSemantics(find.text('Sort: Newest')), expanded(false));
+    await tester.tap(find.text('Sort: Newest'));
+    await tester.pumpAndSettle();
+    expect(tester.getSemantics(find.text('Sort: Newest')), expanded(true));
+    await tester.tap(find.text('Price'));
+    await tester.pumpAndSettle();
+    expect(find.text('Sort: Price'), findsOneWidget);
+
+    expect(find.byTooltip('Share'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.text('Save for later')),
+      // ignore: deprecated_member_use
+      containsSemantics(isEnabled: false, hint: 'Sign in to save items'),
+    );
+    handle.dispose();
   });
 
   testWidgets('playground code follows the chosen options', (tester) async {
