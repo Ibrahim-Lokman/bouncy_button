@@ -1,3 +1,4 @@
+import 'dart:async' show TimeoutException;
 import 'dart:math' as math;
 import 'dart:ui' show ImageFilter;
 
@@ -70,6 +71,8 @@ class BouncyButton extends StatefulWidget {
     this.expanded,
     this.disabledReason,
     this.statesController,
+    this.timeout,
+    this.confirm,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -111,6 +114,8 @@ class BouncyButton extends StatefulWidget {
     this.expanded,
     this.disabledReason,
     this.statesController,
+    this.timeout,
+    this.confirm,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -156,6 +161,8 @@ class BouncyButton extends StatefulWidget {
     this.expanded,
     this.disabledReason,
     this.statesController,
+    this.timeout,
+    this.confirm,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -201,6 +208,8 @@ class BouncyButton extends StatefulWidget {
     this.expanded,
     this.disabledReason,
     this.statesController,
+    this.timeout,
+    this.confirm,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -251,6 +260,8 @@ class BouncyButton extends StatefulWidget {
     this.expanded,
     this.disabledReason,
     this.statesController,
+    this.timeout,
+    this.confirm,
   })  : assert(
           onPressed == null || onPressedAsync == null,
           'Use either onPressed or onPressedAsync, not both.',
@@ -433,6 +444,38 @@ class BouncyButton extends StatefulWidget {
   /// states, for building visuals or testing.
   final WidgetStatesController? statesController;
 
+  /// How long [onPressedAsync] may run before the button gives up and shows
+  /// an error, so a request that hangs doesn't leave it loading forever.
+  ///
+  /// [onError] then receives a [TimeoutException], and the button can be
+  /// pressed again. The action itself keeps running, because Dart can't stop
+  /// a future, but its result is ignored. An error it throws later is still
+  /// reported. If null, there is no limit.
+  final Duration? timeout;
+
+  /// Asked before the action runs, such as to show a confirmation dialog.
+  /// The action runs only if it returns true.
+  ///
+  /// While it waits for an answer, the button ignores presses, so a double
+  /// tap opens one dialog, and it shows no loading. If it throws, the error
+  /// goes to [onError] and the action doesn't run. It applies to [onPressed]
+  /// and [onPressedAsync], and to [BouncyButtonController.press].
+  ///
+  /// ```dart
+  /// BouncyButton(
+  ///   onPressedAsync: deleteAccount,
+  ///   confirm: () async =>
+  ///       await showDialog<bool>(
+  ///         context: context,
+  ///         builder: (context) => const ConfirmDeleteDialog(),
+  ///       ) ??
+  ///       false,
+  ///   style: BouncyButtonStyle.destructive,
+  ///   child: const Text('Delete account'),
+  /// )
+  /// ```
+  final Future<bool> Function()? confirm;
+
   @override
   State<BouncyButton> createState() => _BouncyButtonState();
 }
@@ -496,6 +539,12 @@ class _BouncyButtonState extends State<BouncyButton>
   bool get externalLoading => widget.isLoading ?? false;
 
   @override
+  Duration? get asyncTimeout => widget.timeout;
+
+  @override
+  Future<bool> Function()? get asyncConfirm => widget.confirm;
+
+  @override
   void initState() {
     super.initState();
     syncAsyncController();
@@ -520,6 +569,26 @@ class _BouncyButtonState extends State<BouncyButton>
 
   void _runFromTap() {
     _lastRun = runAsyncAction();
+  }
+
+  /// Runs [BouncyButton.onPressed] once [BouncyButton.confirm] agrees.
+  void _confirmThenPress() {
+    _lastRun = () async {
+      if (await confirmFirst()) {
+        widget.onPressed?.call();
+      }
+    }();
+  }
+
+  /// What the core runs on a tap or activation.
+  VoidCallback? get _coreTap {
+    if (widget.onPressedAsync != null) {
+      return _runFromTap;
+    }
+    if (widget.onPressed == null) {
+      return null;
+    }
+    return widget.confirm == null ? widget.onPressed : _confirmThenPress;
   }
 
   @override
@@ -1255,7 +1324,7 @@ class _BouncyButtonState extends State<BouncyButton>
     _groupLocked = isAsync && watchGroupLock(context);
     Widget button = PressCore(
       key: _coreKey,
-      onTap: widget.onPressed ?? (isAsync ? _runFromTap : null),
+      onTap: _coreTap,
       busy: asyncBusy,
       semanticValue: _feedback.labelFor(status),
       // Async buttons cool down once they are ready again, through the runner.

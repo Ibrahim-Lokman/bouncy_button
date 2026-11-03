@@ -1,3 +1,5 @@
+import 'dart:async' show TimeoutException;
+
 import 'package:flutter/widgets.dart';
 
 import 'async_action.dart';
@@ -52,6 +54,8 @@ class BouncyAsyncBuilder extends StatefulWidget {
     this.controller,
     this.disableWhileBusy = false,
     this.announceStatus = true,
+    this.timeout,
+    this.confirm,
   });
 
   /// The action. If null, [builder] receives a null callback.
@@ -87,6 +91,20 @@ class BouncyAsyncBuilder extends StatefulWidget {
   /// several controls.
   final bool announceStatus;
 
+  /// How long [onPressed] may run before it counts as failed, so a request
+  /// that hangs doesn't keep the widget busy forever.
+  ///
+  /// [onError] then receives a [TimeoutException], and presses work again.
+  /// The action keeps running, but its result is ignored. An error it throws
+  /// later is still reported. If null, there is no limit.
+  final Duration? timeout;
+
+  /// Asked before [onPressed] runs, such as to show a confirmation dialog.
+  /// The action runs only if it returns true. Presses are ignored while it
+  /// waits, and the status stays idle. If it throws, the error goes to
+  /// [onError] and the action doesn't run.
+  final Future<bool> Function()? confirm;
+
   @override
   State<BouncyAsyncBuilder> createState() => _BouncyAsyncBuilderState();
 }
@@ -116,6 +134,12 @@ class _BouncyAsyncBuilderState extends State<BouncyAsyncBuilder>
 
   @override
   BouncyButtonController? get asyncController => widget.controller;
+
+  @override
+  Duration? get asyncTimeout => widget.timeout;
+
+  @override
+  Future<bool> Function()? get asyncConfirm => widget.confirm;
 
   @override
   void initState() {

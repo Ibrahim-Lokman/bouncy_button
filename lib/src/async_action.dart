@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
@@ -38,6 +40,20 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
   /// Called when success or error starts showing, for effects such as haptics.
   void onAsyncResult(BouncyButtonStatus status) {}
 
+  /// How long the action may run before it counts as failed, or null for no
+  /// limit.
+  Duration? get asyncTimeout => null;
+
+  /// Asked before the action runs. The action runs only if it returns true.
+  Future<bool> Function()? get asyncConfirm => null;
+
+  /// Whether [asyncConfirm] is waiting for an answer.
+  bool _confirming = false;
+
+  /// Completes the future [runAsyncAction] returns, at the end of the action
+  /// or when it times out.
+  Completer<void>? _runDone;
+
   BouncyButtonStatus _asyncStatus = BouncyButtonStatus.idle;
 
   /// Identifies the latest run, so a run that finishes after a reset or a
@@ -54,6 +70,8 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
   );
   late final AnimationController _cooldown = AnimationController(vsync: this)
     ..addStatusListener(_handleCooldownStatus);
+  late final AnimationController _timeout = AnimationController(vsync: this)
+    ..addStatusListener(_handleTimeoutStatus);
 
   @override
   BouncyButtonStatus get status =>
@@ -69,7 +87,8 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
       ExclusivePressOwner.watch(context)?.isLockedFor(this) ?? false;
 
   /// Whether a press should be ignored right now.
-  bool get asyncBusy => status != BouncyButtonStatus.idle || asyncCoolingDown;
+  bool get asyncBusy =>
+      status != BouncyButtonStatus.idle || asyncCoolingDown || _confirming;
 
   /// Keeps the controller attached. Call from `initState` and
   /// `didUpdateWidget`, passing the previous controller in the latter.
@@ -87,6 +106,7 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
     _resultHold.dispose();
     _minLoading.dispose();
     _cooldown.dispose();
+    _timeout.dispose();
   }
 
   void _setStatus(BouncyButtonStatus value) {
@@ -124,6 +144,59 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
     }
   }
 
+  void _handleTimeoutStatus(AnimationStatus status) {
+    if (status != AnimationStatus.completed ||
+        !mounted ||
+        this.status != BouncyButtonStatus.loading) {
+      return;
+    }
+    final limit = _timeout.duration!;
+    // The action keeps running, but its result no longer counts. An error it
+    // throws later is still reported.
+    _run++;
+    _minLoading.stop();
+    _finishRun();
+    _reportError(
+      TimeoutException('The action did not finish within $limit.', limit),
+      StackTrace.current,
+    );
+    _endLoading();
+    _showResult(BouncyButtonStatus.error);
+  }
+
+  void _finishRun() {
+    final done = _runDone;
+    _runDone = null;
+    if (done != null && !done.isCompleted) {
+      done.complete();
+    }
+  }
+
+  /// Asks [asyncConfirm], if set, while ignoring presses. Returns whether to
+  /// go ahead. If it throws, the error is reported and the answer is no.
+  Future<bool> confirmFirst() async {
+    final confirm = asyncConfirm;
+    if (confirm == null) {
+      return true;
+    }
+    if (_confirming) {
+      return false;
+    }
+    final run = _run;
+    setState(() => _confirming = true);
+    var confirmed = false;
+    try {
+      confirmed = await confirm();
+    } catch (error, stackTrace) {
+      _reportError(error, stackTrace);
+    }
+    if (!mounted || run != _run) {
+      return false;
+    }
+    setState(() => _confirming = false);
+    return confirmed;
+  }
+
   void _endLoading({bool duringDispose = false}) {
     _loadingOwner?.endLoading(this, duringDispose: duringDispose);
     _loadingOwner = null;
@@ -141,12 +214,40 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
     if (action == null || asyncBusy) {
       return Future<void>.value();
     }
+    if (asyncConfirm != null) {
+      return _confirmThenStart(action);
+    }
+    return _start(action);
+  }
+
+  Future<void> _confirmThenStart(Future<void> Function() action) async {
+    if (!await confirmFirst() || asyncBusy) {
+      return;
+    }
+    await _start(action);
+  }
+
+  Future<void> _start(Future<void> Function() action) {
     final owner = ExclusivePressOwner.maybeOf(context);
     if (owner != null && !owner.beginLoading(this)) {
       return Future<void>.value();
     }
     _loadingOwner = owner;
-    return _runFuture = _execute(action);
+    final done = _runDone = Completer<void>();
+    // An error here can only come from onError itself, and is passed on.
+    _execute(action).then(
+      (_) {
+        if (!done.isCompleted) {
+          done.complete();
+        }
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (!done.isCompleted) {
+          done.completeError(error, stackTrace);
+        }
+      },
+    );
+    return _runFuture = done.future;
   }
 
   Future<void> _execute(Future<void> Function() action) async {
@@ -156,6 +257,12 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
     if (feedback.minLoadingDuration > Duration.zero) {
       _minLoading
         ..duration = feedback.minLoadingDuration
+        ..forward(from: 0);
+    }
+    final timeout = asyncTimeout;
+    if (timeout != null && timeout > Duration.zero) {
+      _timeout
+        ..duration = timeout
         ..forward(from: 0);
     }
     Object? error;
@@ -173,6 +280,7 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
     if (!mounted || run != _run) {
       return;
     }
+    _timeout.stop();
     // Keep loading on screen for the minimum time.
     if (_minLoading.isAnimating) {
       try {
@@ -226,11 +334,16 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
   void reset() {
     _run++;
     _runFuture = null;
+    _runDone = null;
     _resultHold.stop();
     _minLoading.stop();
     _cooldown.stop();
+    _timeout.stop();
     _endLoading();
-    setState(() => _asyncStatus = BouncyButtonStatus.idle);
+    setState(() {
+      _asyncStatus = BouncyButtonStatus.idle;
+      _confirming = false;
+    });
     asyncController?.notifyStatus();
   }
 }
