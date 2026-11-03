@@ -2,6 +2,7 @@ import 'package:flutter/physics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'debug_checks.dart';
 import 'enums.dart';
 import 'exclusive_scope.dart';
 import 'spring.dart';
@@ -104,6 +105,8 @@ class PressCore extends StatefulWidget {
     this.expanded,
     this.statesController,
     this.onFocusHighlightChange,
+    this.debugName = 'A BouncyPressable',
+    this.debugTapTargetFix,
   });
 
   /// Builds the control. Called when state changes, not on animation frames.
@@ -217,6 +220,13 @@ class PressCore extends StatefulWidget {
   /// Called when the keyboard focus highlight starts or stops.
   final ValueChanged<bool>? onFocusHighlightChange;
 
+  /// Names the control in debug warnings, such as `The BouncyButton "Pay"`.
+  final String debugName;
+
+  /// How to enlarge a tap area that is too small, for the debug warning. If
+  /// null, the size isn't checked.
+  final String? debugTapTargetFix;
+
   @override
   State<PressCore> createState() => _PressCoreState();
 }
@@ -281,6 +291,31 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       ..addStatusListener(_handleAnimationStatus);
     _animation = CurvedAnimation(parent: _controller, curve: Curves.linear);
     _syncStates();
+    assert(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _debugCheckSize());
+      return true;
+    }());
+  }
+
+  /// Warns when the tap area is smaller than the platform recommends.
+  void _debugCheckSize() {
+    final fix = widget.debugTapTargetFix;
+    final box = mounted ? context.findRenderObject() : null;
+    if (fix == null || !_isEnabled || box is! RenderBox || !box.hasSize) {
+      return;
+    }
+    final size = box.size;
+    final minimum = debugMinTapTarget();
+    if (size.isEmpty || (size.width >= minimum && size.height >= minimum)) {
+      return;
+    }
+    final shown = '${size.width.round()} by ${size.height.round()}';
+    debugBouncyWarn(
+      'tap-target:${widget.debugName}:$shown',
+      '${widget.debugName} can only be tapped in an area of $shown. Small '
+          'targets are hard to hit, so at least ${minimum.round()} by '
+          '${minimum.round()} is recommended. $fix',
+    );
   }
 
   bool _hasFocus = false;

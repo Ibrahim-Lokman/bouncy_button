@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import 'controller.dart';
+import 'debug_checks.dart';
 import 'enums.dart';
 import 'exclusive_scope.dart';
 import 'feedback.dart';
@@ -89,6 +90,38 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
   /// Whether a press should be ignored right now.
   bool get asyncBusy =>
       status != BouncyButtonStatus.idle || asyncCoolingDown || _confirming;
+
+  /// Warns, in debug mode, when the app's language isn't English but the
+  /// screen reader labels are still the English defaults. Call it from
+  /// `build`, inside an `assert`.
+  void debugCheckFeedbackLabels(BuildContext context, String widgetName) {
+    final locale = Localizations.maybeLocaleOf(context);
+    if (locale == null || locale.languageCode == 'en') {
+      return;
+    }
+    const defaults = BouncyButtonFeedback();
+    final feedback = asyncFeedback;
+    final english = [
+      if (feedback.loadingText == null &&
+          feedback.loadingLabel == defaults.loadingLabel)
+        '"${defaults.loadingLabel}"',
+      if (feedback.successLabel == defaults.successLabel)
+        '"${defaults.successLabel}"',
+      if (feedback.errorLabel == defaults.errorLabel)
+        '"${defaults.errorLabel}"',
+    ];
+    if (english.isEmpty) {
+      return;
+    }
+    debugBouncyWarn(
+      'labels:${locale.languageCode}:${english.join()}',
+      'A $widgetName reads the English labels ${english.join(', ')} to '
+          'screen readers, but the app is in "${locale.toLanguageTag()}". '
+          'Translate them with BouncyButtonFeedback(loadingLabel: ..., '
+          'successLabel: ..., errorLabel: ...), for every button at once '
+          'through BouncyButtonTheme.defaultFeedback.',
+    );
+  }
 
   /// Keeps the controller attached. Call from `initState` and
   /// `didUpdateWidget`, passing the previous controller in the latter.

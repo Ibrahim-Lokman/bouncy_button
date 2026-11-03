@@ -175,6 +175,12 @@ class _BouncyAsyncBuilderState extends State<BouncyAsyncBuilder>
 
   @override
   Widget build(BuildContext context) {
+    assert(() {
+      if (widget.announceStatus && widget.onPressed != null) {
+        debugCheckFeedbackLabels(context, 'BouncyAsyncBuilder');
+      }
+      return true;
+    }());
     _groupLocked = watchGroupLock(context);
     final hasAction = widget.onPressed != null;
     final blocked = asyncBusy || _groupLocked;

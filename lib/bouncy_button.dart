@@ -21,6 +21,7 @@ export 'src/scope.dart';
 
 // Export utilities
 export 'src/utils.dart';
+export 'src/debug_checks.dart' show debugBouncyChecksEnabled;
 
 // Export enums
 export 'src/enums.dart';

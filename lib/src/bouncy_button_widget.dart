@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'async_action.dart';
 import 'controller.dart';
+import 'debug_checks.dart';
 import 'enums.dart';
 import 'feedback.dart';
 import 'styles.dart';
@@ -548,6 +549,10 @@ class _BouncyButtonState extends State<BouncyButton>
   void initState() {
     super.initState();
     syncAsyncController();
+    assert(() {
+      _debugScheduleContentCheck();
+      return true;
+    }());
   }
 
   @override
@@ -557,6 +562,170 @@ class _BouncyButtonState extends State<BouncyButton>
     if (oldWidget.isLoading != widget.isLoading) {
       widget.controller?.notifyStatus();
     }
+    assert(() {
+      _debugCheckToggleLabel(oldWidget);
+      if (oldWidget.style != widget.style) {
+        _debugScheduleContentCheck();
+      }
+      return true;
+    }());
+  }
+
+  // Debug checks. They only run inside asserts, so release builds leave them
+  // out. See debugBouncyChecksEnabled.
+
+  /// The context of the content the app passed in, without this button's own
+  /// widgets around it. Only set in debug mode.
+  BuildContext? _debugContentContext;
+
+  /// Names this button in debug warnings.
+  String get _debugName {
+    final context = _debugContentContext;
+    final texts = context != null && context.mounted
+        ? debugVisibleTexts(context)
+        : const <(String, TextStyle?)>[];
+    final name = texts.isNotEmpty
+        ? texts.map((text) => text.$1).join(' ')
+        : widget.tooltip ?? widget.semanticLabel;
+    return name == null ? 'A BouncyButton' : 'The BouncyButton "$name"';
+  }
+
+  void _debugScheduleContentCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _debugCheckContent());
+  }
+
+  /// Warns about an icon with nothing for screen readers to read.
+  void _debugCheckIconLabel() {
+    final child = widget.child;
+    if (widget._variant == _Variant.icon ||
+        widget.builder != null ||
+        child is! Icon ||
+        child.semanticLabel != null ||
+        widget.semanticLabel != null ||
+        widget.tooltip != null) {
+      return;
+    }
+    debugBouncyWarn(
+      'icon-label:${child.icon}',
+      'A BouncyButton shows only an icon and has no label, so screen readers '
+          'can only call it "button". Use BouncyButton.icon(tooltip: ...), or '
+          'set tooltip or semanticLabel.',
+    );
+  }
+
+  /// Warns when the label changes along with the toggle state.
+  void _debugCheckToggleLabel(BouncyButton oldWidget) {
+    final before = oldWidget.child;
+    final after = widget.child;
+    if (oldWidget.isSelected == null ||
+        widget.isSelected == null ||
+        oldWidget.isSelected == widget.isSelected ||
+        before is! Text ||
+        after is! Text ||
+        before.data == after.data) {
+      return;
+    }
+    debugBouncyWarn(
+      'toggle-label:${before.data}:${after.data}',
+      'A BouncyButton changed its text from "${before.data}" to '
+          '"${after.data}" when isSelected changed. Screen readers already '
+          'announce whether it is on, so they would read "${after.data}, '
+          'checked". Keep one text, such as "${before.data}", and let '
+          'isSelected show the state.',
+    );
+  }
+
+  /// Checks the label, nested tappables, and text contrast after layout.
+  void _debugCheckContent() {
+    final context = _debugContentContext;
+    if (!mounted || context == null || !context.mounted) {
+      return;
+    }
+    final name = _debugName;
+    final texts = debugVisibleTexts(context);
+    final visible = texts.map((text) => text.$1).join(' ').trim();
+
+    final label = widget.semanticLabel;
+    if (label != null &&
+        visible.isNotEmpty &&
+        !label.toLowerCase().contains(visible.toLowerCase())) {
+      debugBouncyWarn(
+        'label-in-name:$label:$visible',
+        'The BouncyButton showing "$visible" has the semanticLabel "$label", '
+            'which does not contain "$visible". People using voice control '
+            'say the text they see, so include it in the label, for example '
+            '"$visible ${label.toLowerCase()}".',
+      );
+    }
+
+    if (debugContainsTappable(context)) {
+      debugBouncyWarn(
+        'nested:$name',
+        '$name contains another widget that handles taps, such as a button, '
+            'an InkWell, a GestureDetector, or a text field. Only one of them '
+            'gets each tap. Move it out of the button, or use a '
+            'BouncyPressable, which supports controls inside it.',
+      );
+    }
+
+    if (_isEnabled) {
+      _debugCheckContrast(name, texts);
+    }
+  }
+
+  /// Warns when text doesn't stand out enough from the face.
+  void _debugCheckContrast(String name, List<(String, TextStyle?)> texts) {
+    final style = _style;
+    final faces = _debugFaceColors(style);
+    if (faces.isEmpty) {
+      return;
+    }
+    for (final (_, textStyle) in texts) {
+      final color = textStyle?.color;
+      if (color == null) {
+        continue;
+      }
+      final large = debugIsLargeText(textStyle);
+      final needed = large ? 3.0 : 4.5;
+      for (final face in faces) {
+        final ratio = contrastRatio(Color.alphaBlend(color, face), face);
+        if (ratio < needed) {
+          debugBouncyWarn(
+            'contrast:$color:$face',
+            '$name has text with a contrast of ${ratio.toStringAsFixed(1)}:1 '
+                'against its face, below the ${needed.toStringAsFixed(1)}:1 '
+                'needed for ${large ? 'large' : 'normal'} text to be easy to '
+                'read. Choose a foregroundColor or backgroundColor further '
+                'apart in lightness.',
+          );
+          return;
+        }
+      }
+    }
+  }
+
+  /// The solid colors text is drawn on, or none if they aren't known, such
+  /// as for a see-through face or an image.
+  List<Color> _debugFaceColors(BouncyButtonStyle style) {
+    if (_isGlass(style) || style.fill == BouncyButtonFill.ghost) {
+      return const [];
+    }
+    final decoration = style.decoration;
+    final List<Color> colors;
+    if (decoration != null) {
+      if (decoration.image != null) {
+        return const [];
+      }
+      colors = decoration.gradient?.colors ??
+          [if (decoration.color != null) decoration.color!];
+    } else {
+      final gradient = _usesAccent(style) ? null : _faceGradient(style);
+      colors = gradient?.colors ?? [_faceColor(context, style)];
+    }
+    if (colors.any((color) => color.a < 1)) {
+      return const [];
+    }
+    return colors;
   }
 
   @override
@@ -977,7 +1146,7 @@ class _BouncyButtonState extends State<BouncyButton>
     PressCoreData press,
   ) {
     final builder = widget.builder;
-    final Widget content = builder != null
+    Widget content = builder != null
         ? builder(context, press.isPressed)
         : Padding(
             padding: style.padding ??
@@ -989,6 +1158,17 @@ class _BouncyButtonState extends State<BouncyButton>
               child: _withIcons(),
             ),
           );
+    assert(() {
+      // Marks where the app's content starts, for the debug checks.
+      final appContent = content;
+      content = Builder(
+        builder: (context) {
+          _debugContentContext = context;
+          return appContent;
+        },
+      );
+      return true;
+    }());
     final status = this.status;
     final showContent = status == BouncyButtonStatus.idle;
     // The content stays laid out while hidden, so the button keeps its size.
@@ -1321,6 +1501,13 @@ class _BouncyButtonState extends State<BouncyButton>
     final animation = _animationConfig;
 
     final isAsync = widget.onPressedAsync != null;
+    assert(() {
+      _debugCheckIconLabel();
+      if (isAsync || widget.isLoading != null) {
+        debugCheckFeedbackLabels(context, 'BouncyButton');
+      }
+      return true;
+    }());
     _groupLocked = isAsync && watchGroupLock(context);
     Widget button = PressCore(
       key: _coreKey,
@@ -1356,6 +1543,17 @@ class _BouncyButtonState extends State<BouncyButton>
       expanded: widget.expanded,
       statesController: widget.statesController,
       onFocusHighlightChange: _handleFocusHighlight,
+      debugName: widget.tooltip != null
+          ? 'The BouncyButton "${widget.tooltip}"'
+          : widget.semanticLabel != null
+              ? 'The BouncyButton "${widget.semanticLabel}"'
+              : widget.child is Text
+                  ? 'The BouncyButton "${(widget.child as Text).data}"'
+                  : 'A BouncyButton',
+      debugTapTargetFix: style.minTapTarget == null
+          ? 'Set minTapTarget: 48 on its style to enlarge the tap area '
+              'without changing how it looks.'
+          : null,
       labelReplacesChildSemantics: true,
       builder: (context, press) {
         _coreActivate = press.handleActivate;

@@ -185,6 +185,11 @@ class BouncyPressable extends StatelessWidget {
       isSelected: isSelected,
       expanded: expanded,
       statesController: statesController,
+      debugName: semanticLabel == null
+          ? 'A BouncyPressable'
+          : 'The BouncyPressable "$semanticLabel"',
+      debugTapTargetFix:
+          'Add padding inside it, around the child, to enlarge the tap area.',
       builder: (context, press) {
         return AnimatedBuilder(
           animation: press.animation,
