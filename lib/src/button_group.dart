@@ -155,10 +155,11 @@ class BouncyButtonGroup<T> extends StatelessWidget {
           final segment = segments[i];
           final isSelected = selected.contains(segment.value);
           final enabled = onSelectionChanged != null && segment.enabled;
-          // Merged, so screen readers find the selected state on the button.
+          // Merged, so screen readers find the state on the button. Checked,
+          // as in Flutter's SegmentedButton, so the off state is read too.
           Widget button = MergeSemantics(
             child: Semantics(
-              selected: isSelected,
+              checked: isSelected,
               inMutuallyExclusiveGroup: !multiSelect,
               child: BouncyButton(
                 onPressed: enabled ? () => _handlePressed(segment.value) : null,

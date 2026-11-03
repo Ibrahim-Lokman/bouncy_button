@@ -603,6 +603,7 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
         autofocus: widget.autofocus,
         mouseCursor: widget.cursor ??
             (enabled ? SystemMouseCursors.click : SystemMouseCursors.basic),
+        shortcuts: hasTap ? _ignoreKeyRepeats : null,
         actions: <Type, Action<Intent>>{
           if (hasTap) ...{
             ActivateIntent: _FocusedAction<ActivateIntent>(
@@ -612,6 +613,10 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
             ButtonActivateIntent: _FocusedAction<ButtonActivateIntent>(
               _focusNode,
               _activate,
+            ),
+            _IgnoreKeyRepeatIntent: _FocusedAction<_IgnoreKeyRepeatIntent>(
+              _focusNode,
+              () {},
             ),
           },
         },
@@ -678,6 +683,40 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       ),
     );
   }
+}
+
+/// Holding a key sends repeat events, and the app's default shortcuts turn
+/// each one into another activation. These catch the repeats of the keys that
+/// activate, so a held key presses once.
+const Map<ShortcutActivator, Intent> _ignoreKeyRepeats = {
+  _KeyRepeat(LogicalKeyboardKey.enter): _IgnoreKeyRepeatIntent(),
+  _KeyRepeat(LogicalKeyboardKey.numpadEnter): _IgnoreKeyRepeatIntent(),
+  _KeyRepeat(LogicalKeyboardKey.space): _IgnoreKeyRepeatIntent(),
+  _KeyRepeat(LogicalKeyboardKey.select): _IgnoreKeyRepeatIntent(),
+  _KeyRepeat(LogicalKeyboardKey.gameButtonA): _IgnoreKeyRepeatIntent(),
+};
+
+/// Matches only the repeat events of [key].
+class _KeyRepeat extends ShortcutActivator {
+  const _KeyRepeat(this.key);
+
+  final LogicalKeyboardKey key;
+
+  @override
+  Iterable<LogicalKeyboardKey> get triggers => [key];
+
+  @override
+  bool accepts(KeyEvent event, HardwareKeyboard state) =>
+      event is KeyRepeatEvent && event.logicalKey == key;
+
+  @override
+  String debugDescribeKeys() => 'repeat of ${key.debugName}';
+}
+
+/// Swallows a key repeat. Its action only applies while the control itself
+/// has focus, so a focused child, such as a text field, still gets them.
+class _IgnoreKeyRepeatIntent extends Intent {
+  const _IgnoreKeyRepeatIntent();
 }
 
 /// Lets a [PressCore] find the one enclosing it.

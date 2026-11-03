@@ -223,13 +223,36 @@ void main() {
       final selected = containsSemantics(
         label: 'Day',
         isButton: true,
-        isSelected: true,
+        hasCheckedState: true,
+        isChecked: true,
         isInMutuallyExclusiveGroup: true,
       );
       expect(tester.getSemantics(find.text('Day')), selected);
+      // Unselected segments are announced as not checked, which a selected
+      // flag alone could not say.
       // ignore: deprecated_member_use
-      final unselected = containsSemantics(label: 'Week', isSelected: false);
+      final unselected = containsSemantics(
+        label: 'Week',
+        hasCheckedState: true,
+        isChecked: false,
+      );
       expect(tester.getSemantics(find.text('Week')), unselected);
+      handle.dispose();
+    });
+
+    testWidgets('multi-select segments are not in an exclusive group',
+        (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        _app(group(onChanged: (_) {}, multiSelect: true)),
+      );
+      // ignore: deprecated_member_use
+      final day = containsSemantics(
+        label: 'Day',
+        isChecked: true,
+        isInMutuallyExclusiveGroup: false,
+      );
+      expect(tester.getSemantics(find.text('Day')), day);
       handle.dispose();
     });
 

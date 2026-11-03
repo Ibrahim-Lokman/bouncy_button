@@ -178,7 +178,13 @@ class BouncyPressable extends StatelessWidget {
             position: DecorationPosition.foreground,
             decoration: BoxDecoration(
               border: press.isFocused
-                  ? Border.all(color: focusColor, width: 2)
+                  ? Border.all(
+                      color: focusColor,
+                      // Thicker when the system asks for more contrast.
+                      width: (MediaQuery.maybeHighContrastOf(context) ?? false)
+                          ? 3
+                          : 2,
+                    )
                   : null,
               borderRadius: press.isFocused ? focusBorderRadius : null,
             ),

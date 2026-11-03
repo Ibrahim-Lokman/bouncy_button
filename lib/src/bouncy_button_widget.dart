@@ -751,7 +751,11 @@ class _BouncyButtonState extends State<BouncyButton>
               ? interaction.hoverColor ?? fallback.withAlpha(20)
               : null,
       border: press.isFocused
-          ? Border.all(color: interaction.focusColor ?? fallback, width: 2)
+          ? Border.all(
+              color: interaction.focusColor ?? fallback,
+              // Thicker when the system asks for more contrast.
+              width: _highContrast(context) ? 3 : 2,
+            )
           : null,
       borderRadius: shape == BoxShape.circle
           ? null
