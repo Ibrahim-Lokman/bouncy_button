@@ -12,8 +12,7 @@ final Finder _spinner = find.byType(CircularProgressIndicator);
 final Finder _errorIcon = find.byIcon(Icons.error_outline_rounded);
 final Finder _tick = find.byIcon(Icons.check_rounded);
 
-/// The timeout runs on an animation, which finishes on the first frame after
-/// the limit has passed.
+/// One more frame after the timeout, so the error state is built.
 const Duration _frame = Duration(milliseconds: 16);
 
 void main() {

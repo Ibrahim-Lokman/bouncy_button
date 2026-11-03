@@ -546,6 +546,9 @@ class _BouncyButtonState extends State<BouncyButton>
   Future<bool> Function()? get asyncConfirm => widget.confirm;
 
   @override
+  bool get asyncEnabled => widget.enabled;
+
+  @override
   void initState() {
     super.initState();
     syncAsyncController();
@@ -578,12 +581,13 @@ class _BouncyButtonState extends State<BouncyButton>
   /// widgets around it. Only set in debug mode.
   BuildContext? _debugContentContext;
 
-  /// Names this button in debug warnings.
-  String get _debugName {
+  /// Names this button in debug warnings, from its visible text if any.
+  String _debugName([List<(String, TextStyle?)>? visibleTexts]) {
     final context = _debugContentContext;
-    final texts = context != null && context.mounted
-        ? debugVisibleTexts(context)
-        : const <(String, TextStyle?)>[];
+    final texts = visibleTexts ??
+        (context != null && context.mounted
+            ? debugVisibleTexts(context)
+            : const <(String, TextStyle?)>[]);
     final name = texts.isNotEmpty
         ? texts.map((text) => text.$1).join(' ')
         : widget.tooltip ?? widget.semanticLabel;
@@ -641,8 +645,8 @@ class _BouncyButtonState extends State<BouncyButton>
     if (!mounted || context == null || !context.mounted) {
       return;
     }
-    final name = _debugName;
     final texts = debugVisibleTexts(context);
+    final name = _debugName(texts);
     final visible = texts.map((text) => text.$1).join(' ').trim();
 
     final label = widget.semanticLabel;
@@ -707,21 +711,15 @@ class _BouncyButtonState extends State<BouncyButton>
   /// The solid colors text is drawn on, or none if they aren't known, such
   /// as for a see-through face or an image.
   List<Color> _debugFaceColors(BouncyButtonStyle style) {
-    if (_isGlass(style) || style.fill == BouncyButtonFill.ghost) {
+    if (_isGlass(style) ||
+        style.fill == BouncyButtonFill.ghost ||
+        style.decoration?.image != null) {
       return const [];
     }
-    final decoration = style.decoration;
-    final List<Color> colors;
-    if (decoration != null) {
-      if (decoration.image != null) {
-        return const [];
-      }
-      colors = decoration.gradient?.colors ??
-          [if (decoration.color != null) decoration.color!];
-    } else {
-      final gradient = _usesAccent(style) ? null : _faceGradient(style);
-      colors = gradient?.colors ?? [_faceColor(context, style)];
-    }
+    // An outlined face is painted without the style's gradient.
+    final colors = _usesAccent(style) && style.decoration == null
+        ? [_faceColor(context, style)]
+        : _faceColors(context, style);
     if (colors.any((color) => color.a < 1)) {
       return const [];
     }
@@ -743,7 +741,8 @@ class _BouncyButtonState extends State<BouncyButton>
   /// Runs [BouncyButton.onPressed] once [BouncyButton.confirm] agrees.
   void _confirmThenPress() {
     _lastRun = () async {
-      if (await confirmFirst()) {
+      // The app may have disabled the button while the question was open.
+      if (await confirmFirst() && widget.enabled) {
         widget.onPressed?.call();
       }
     }();
@@ -936,20 +935,25 @@ class _BouncyButtonState extends State<BouncyButton>
       style.fill == BouncyButtonFill.outlined ||
       style.fill == BouncyButtonFill.ghost;
 
-  /// The color that most represents the button face, or null if unknown.
-  Color? _faceBaseColor(BuildContext context, BouncyButtonStyle style) {
+  /// The colors the face is painted with: its decoration's color or
+  /// gradient, otherwise its gradient, otherwise its fill color.
+  List<Color> _faceColors(BuildContext context, BouncyButtonStyle style) {
     final decoration = style.decoration;
     if (decoration != null) {
-      return decoration.color ??
-          (decoration.gradient?.colors.isNotEmpty ?? false
-              ? decoration.gradient!.colors.first
-              : null);
+      final color = decoration.color;
+      return color != null ? [color] : decoration.gradient?.colors ?? const [];
     }
     final gradient = _faceGradient(style);
     if (gradient != null && gradient.colors.isNotEmpty) {
-      return gradient.colors.first;
+      return gradient.colors;
     }
-    return _faceColor(context, style);
+    return [_faceColor(context, style)];
+  }
+
+  /// The color that most represents the button face, or null if unknown.
+  Color? _faceBaseColor(BuildContext context, BouncyButtonStyle style) {
+    final colors = _faceColors(context, style);
+    return colors.isEmpty ? null : colors.first;
   }
 
   Color? _foregroundColor(BuildContext context, BouncyButtonStyle style) {
@@ -1509,6 +1513,17 @@ class _BouncyButtonState extends State<BouncyButton>
       return true;
     }());
     _groupLocked = isAsync && watchGroupLock(context);
+    // Only set in debug mode, for the tap area check.
+    String Function()? describe;
+    String? tapTargetFix;
+    assert(() {
+      describe = _debugName;
+      if (style.minTapTarget == null) {
+        tapTargetFix = 'Set minTapTarget: 48 on its style to enlarge the tap '
+            'area without changing how it looks.';
+      }
+      return true;
+    }());
     Widget button = PressCore(
       key: _coreKey,
       onTap: _coreTap,
@@ -1543,17 +1558,8 @@ class _BouncyButtonState extends State<BouncyButton>
       expanded: widget.expanded,
       statesController: widget.statesController,
       onFocusHighlightChange: _handleFocusHighlight,
-      debugName: widget.tooltip != null
-          ? 'The BouncyButton "${widget.tooltip}"'
-          : widget.semanticLabel != null
-              ? 'The BouncyButton "${widget.semanticLabel}"'
-              : widget.child is Text
-                  ? 'The BouncyButton "${(widget.child as Text).data}"'
-                  : 'A BouncyButton',
-      debugTapTargetFix: style.minTapTarget == null
-          ? 'Set minTapTarget: 48 on its style to enlarge the tap area '
-              'without changing how it looks.'
-          : null,
+      debugDescribe: describe,
+      debugTapTargetFix: tapTargetFix,
       labelReplacesChildSemantics: true,
       builder: (context, press) {
         _coreActivate = press.handleActivate;

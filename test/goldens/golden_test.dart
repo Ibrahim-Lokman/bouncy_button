@@ -1,8 +1,9 @@
 // Screenshot tests of every fill in every state.
 //
 // The images differ slightly between operating systems and Flutter versions,
-// so these run only on macOS, where the reference images were made. Run them
-// before a release with:
+// so these run only on macOS, with the Flutter version the reference images
+// were made with, and are skipped everywhere else, CI included. On that setup
+// they run with every `flutter test`. To run only these:
 //
 //     flutter test --tags golden
 //

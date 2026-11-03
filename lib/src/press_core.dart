@@ -105,7 +105,7 @@ class PressCore extends StatefulWidget {
     this.expanded,
     this.statesController,
     this.onFocusHighlightChange,
-    this.debugName = 'A BouncyPressable',
+    this.debugDescribe,
     this.debugTapTargetFix,
   });
 
@@ -221,10 +221,11 @@ class PressCore extends StatefulWidget {
   final ValueChanged<bool>? onFocusHighlightChange;
 
   /// Names the control in debug warnings, such as `The BouncyButton "Pay"`.
-  final String debugName;
+  /// Only set in debug mode, so release builds don't build the name.
+  final String Function()? debugDescribe;
 
   /// How to enlarge a tap area that is too small, for the debug warning. If
-  /// null, the size isn't checked.
+  /// null, the size isn't checked. Only set in debug mode.
   final String? debugTapTargetFix;
 
   @override
@@ -310,9 +311,10 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
       return;
     }
     final shown = '${size.width.round()} by ${size.height.round()}';
+    final name = widget.debugDescribe?.call() ?? 'A button';
     debugBouncyWarn(
-      'tap-target:${widget.debugName}:$shown',
-      '${widget.debugName} can only be tapped in an area of $shown. Small '
+      'tap-target:$name:$shown',
+      '$name can only be tapped in an area of $shown. Small '
           'targets are hard to hit, so at least ${minimum.round()} by '
           '${minimum.round()} is recommended. $fix',
     );
@@ -346,9 +348,6 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     _syncAnimation();
     if ((oldWidget.spring == null) != (widget.spring == null)) {
       _switchDriver();
-    }
-    if (!identical(oldWidget.statesController, widget.statesController)) {
-      oldWidget.statesController?.value = <WidgetState>{};
     }
     // The gesture callbacks are about to be removed, so nothing else will
     // release a press that is in progress.
@@ -488,7 +487,12 @@ class _PressCoreState extends State<PressCore> with TickerProviderStateMixin {
     if (cooldown == null || cooldown <= Duration.zero) {
       return;
     }
-    (_cooldown ??= AnimationController(vsync: this))
+    // It measures time, not motion, so it keeps its full length when the
+    // system turns animations off.
+    (_cooldown ??= AnimationController(
+      vsync: this,
+      animationBehavior: AnimationBehavior.preserve,
+    ))
       ..duration = cooldown
       ..forward(from: 0);
   }

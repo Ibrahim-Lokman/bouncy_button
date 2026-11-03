@@ -158,8 +158,22 @@ class BouncyPressable extends StatelessWidget {
   /// states, for building visuals or testing.
   final WidgetStatesController? statesController;
 
+  /// Names this widget in debug warnings.
+  String _debugName() => semanticLabel == null
+      ? 'A BouncyPressable'
+      : 'The BouncyPressable "$semanticLabel"';
+
   @override
   Widget build(BuildContext context) {
+    // Only set in debug mode, for the tap area check.
+    String Function()? describe;
+    String? tapTargetFix;
+    assert(() {
+      describe = _debugName;
+      tapTargetFix =
+          'Add padding inside it, around the child, to enlarge the tap area.';
+      return true;
+    }());
     return PressCore(
       onTap: onTap,
       onLongPress: onLongPress,
@@ -185,11 +199,8 @@ class BouncyPressable extends StatelessWidget {
       isSelected: isSelected,
       expanded: expanded,
       statesController: statesController,
-      debugName: semanticLabel == null
-          ? 'A BouncyPressable'
-          : 'The BouncyPressable "$semanticLabel"',
-      debugTapTargetFix:
-          'Add padding inside it, around the child, to enlarge the tap area.',
+      debugDescribe: describe,
+      debugTapTargetFix: tapTargetFix,
       builder: (context, press) {
         return AnimatedBuilder(
           animation: press.animation,

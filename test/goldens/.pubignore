@@ -1,4 +1,3 @@
-# The reference images are only needed to run the screenshot tests, which
-# contributors do from a clone of the repository. Leaving them out keeps the
-# package small for everyone who depends on it.
-images/
+# Screenshot tests are only for contributors, who run them from a clone of
+# the repository. Leaving them out, images included, keeps the package small.
+*
