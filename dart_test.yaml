@@ -1,0 +1,4 @@
+tags:
+  # Screenshot tests in test/goldens. They only run on macOS, where their
+  # reference images were made. Run them with: flutter test --tags golden
+  golden:

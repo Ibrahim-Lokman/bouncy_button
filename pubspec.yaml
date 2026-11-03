@@ -13,10 +13,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
-dev_dependencies:
+  # Used only by package:bouncy_button/testing.dart. Apps already have it for
+  # their own tests, and release builds don't include it.
   flutter_test:
     sdk: flutter
+
+dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter:
