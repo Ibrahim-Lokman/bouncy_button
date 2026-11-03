@@ -123,6 +123,28 @@ mixin AsyncActionRunner<T extends StatefulWidget> on TickerProviderStateMixin<T>
     );
   }
 
+  bool _active = true;
+
+  @override
+  bool get isActive => mounted && _active;
+
+  // A widget that leaves the tree gives up its controller, so the widget
+  // that replaces it can take it, and takes it back if it is moved instead.
+
+  @override
+  void deactivate() {
+    _active = false;
+    asyncController?.detach(this);
+    super.deactivate();
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    _active = true;
+    asyncController?.attach(this);
+  }
+
   /// Keeps the controller attached. Call from `initState` and
   /// `didUpdateWidget`, passing the previous controller in the latter.
   void syncAsyncController([BouncyButtonController? previous]) {

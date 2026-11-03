@@ -14,6 +14,9 @@ abstract interface class BouncyControllerHost {
 
   /// Returns to idle at once.
   void reset();
+
+  /// Whether the widget is in the tree, rather than being removed or moved.
+  bool get isActive;
 }
 
 /// Controls a `BouncyButton` or `BouncyAsyncBuilder` from code.
@@ -65,12 +68,34 @@ class BouncyButtonController extends ChangeNotifier {
   void reset() => _host?.reset();
 
   /// Connects [host]. Called by the widget.
+  ///
+  /// While the tree rebuilds, the widget being replaced can still hold the
+  /// controller for a moment, such as when a list moves a button to another
+  /// position. So the newest widget takes over, and only if the previous one
+  /// is still in the tree once the frame ends are two widgets sharing it.
   void attach(BouncyControllerHost host) {
-    assert(
-      _host == null || identical(_host, host),
-      'A BouncyButtonController can only be attached to one widget at a time.',
-    );
+    final previous = _host;
     _host = host;
+    if (previous != null && !identical(previous, host)) {
+      assert(() {
+        SchedulerBinding.instance.addPostFrameCallback((_) {
+          if (previous.isActive && identical(_host, host)) {
+            FlutterError.reportError(
+              FlutterErrorDetails(
+                exception: FlutterError(
+                  'A BouncyButtonController can only be attached to one '
+                  'widget at a time.\n'
+                  'Two widgets in the tree were given the same controller. '
+                  'Create one controller for each button.',
+                ),
+                library: 'bouncy_button',
+              ),
+            );
+          }
+        });
+        return true;
+      }());
+    }
     notifyStatus();
   }
 
