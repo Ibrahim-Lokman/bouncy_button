@@ -21,6 +21,8 @@ This release goes through a checklist of common button mistakes, and makes each 
 
 - Holding Enter, Space, or another activation key pressed a button over and over, because the app's shortcuts turned each key repeat into another press. It now presses once.
 - A button with a controller could report "can only be attached to one widget at a time" when a list moved it to another position.
+- When the system asks apps to turn animations off, such as Remove animations on Android, Flutter shortened `cooldown`, `minLoadingDuration`, and `resultDuration` to 5% of their length, so a 600 millisecond cooldown lasted 30. They now keep their full length.
+- An `onError` that throws no longer leaves a button loading or a `BouncyExclusiveScope` locked. Its error is reported to Flutter instead.
 
 ### Changed
 
