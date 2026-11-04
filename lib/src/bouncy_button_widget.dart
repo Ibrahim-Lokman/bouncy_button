@@ -1242,7 +1242,10 @@ class _BouncyButtonState extends State<BouncyButton>
           dimension: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            color: IconTheme.of(context).color,
+            // The same color as the button's text, including a color set
+            // through style.textStyle.
+            color: DefaultTextStyle.of(context).style.color ??
+                IconTheme.of(context).color,
           ),
         );
         final text = feedback.loadingText;

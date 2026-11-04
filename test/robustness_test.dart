@@ -350,6 +350,49 @@ void main() {
       ),
     );
     expect(spinnerColor(), scheme.primary);
+
+    // A text color from the style is used too, to match the loading text.
+    await tester.pumpWidget(
+      _app(
+        BouncyButton(
+          isLoading: true,
+          onPressed: () {},
+          feedback: const BouncyButtonFeedback(loadingText: 'Paying…'),
+          style: const BouncyButtonStyle(
+            textStyle: TextStyle(color: Colors.amber),
+          ),
+          child: const Text('Pay'),
+        ),
+      ),
+    );
+    final text = tester.widget<RichText>(
+      find.descendant(
+        of: find.byType(BouncyButton),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is RichText && widget.text.toPlainText() == 'Paying…',
+        ),
+      ),
+    );
+    expect(spinnerColor(), Colors.amber);
+    expect(text.text.style?.color, Colors.amber);
+  });
+
+  testWidgets('a disabled loading spinner matches the disabled text',
+      (tester) async {
+    await tester.pumpWidget(
+      _app(const BouncyButton(isLoading: true, child: Text('Pay'))),
+    );
+    final spinner = tester.widget<CircularProgressIndicator>(_spinner);
+    final label = tester.widget<RichText>(
+      find.descendant(
+        of: find.byType(BouncyButton),
+        matching: find.byWidgetPredicate(
+          (widget) => widget is RichText && widget.text.toPlainText() == 'Pay',
+        ),
+      ),
+    );
+    expect(spinner.color, label.text.style?.color);
   });
 
   testWidgets('a states controller can be replaced after disposing the old',

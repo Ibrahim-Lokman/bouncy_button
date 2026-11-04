@@ -42,14 +42,29 @@ class FeaturesScreen extends StatelessWidget {
 }
 
 /// One numbered feature, with its title, a sentence about it, and its demo.
-class FeatureCard extends StatelessWidget {
+///
+/// It stays alive when scrolled off screen, so a demo keeps its choices, and
+/// an action it is running finishes.
+class FeatureCard extends StatefulWidget {
   const FeatureCard({super.key, required this.number, required this.demo});
 
   final int number;
   final FeatureDemo demo;
 
   @override
+  State<FeatureCard> createState() => _FeatureCardState();
+}
+
+class _FeatureCardState extends State<FeatureCard>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
   Widget build(BuildContext context) {
+    super.build(context);
+    final number = widget.number;
+    final demo = widget.demo;
     final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 16),

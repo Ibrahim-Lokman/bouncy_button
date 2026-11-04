@@ -185,7 +185,7 @@ void main() {
     testWidgets(
       'every fill in every state, ${brightness.name}',
       (tester) async {
-        await _setSize(tester, const Size(940, 720));
+        await _setSize(tester, const Size(1090, 720));
         final controllers = <BouncyButtonController>[];
         BouncyButtonController controller() {
           final created = BouncyButtonController();
@@ -210,6 +210,7 @@ void main() {
                       'rest',
                       'disabled',
                       'loading',
+                      'disabled loading',
                       'success',
                       'error',
                     ])
@@ -235,6 +236,11 @@ void main() {
                           BouncyButton(
                             isLoading: true,
                             onPressed: () {},
+                            style: _styleFor(fill),
+                            child: const Text('Pay'),
+                          ),
+                          BouncyButton(
+                            isLoading: true,
                             style: _styleFor(fill),
                             child: const Text('Pay'),
                           ),

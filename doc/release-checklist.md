@@ -67,9 +67,20 @@ On a real phone:
 
 ## 6. Publish
 
-- [ ] Update the version in `pubspec.yaml` and add a `CHANGELOG.md` entry.
-- [ ] If the Features tab changed, record the README's images again with `example/tool/make_gifs.sh`, and look at them.
-- [ ] Change the tag in the README's image URLs, `.../bouncy_button/vX.Y.Z/gifs/...`, to the new version. Each version's page on pub.dev then keeps its own images.
-- [ ] Commit, then tag the release as `vX.Y.Z`. The README's images load from that tag, so it must be pushed before people see the page.
-- [ ] `flutter pub publish`.
-- [ ] Push the commit and the tag, then check that pub.dev shows the new version and that CI passes.
+In this order, because the README's images load from the release tag, which must exist before pub.dev shows the page:
+
+1. Update the version in `pubspec.yaml` and add a `CHANGELOG.md` entry.
+2. If the Features tab changed, record the README's images again with `example/tool/make_gifs.sh`, and look at them.
+3. Change the tag in the README's image URLs, `.../bouncy_button/vX.Y.Z/gifs/...`, to the new version. Each version's page on pub.dev then keeps its own images.
+4. Commit, merge into `main`, and tag the release as `vX.Y.Z`.
+5. Push `main` and the tag.
+6. Check that every image URL in the README loads:
+
+   ```sh
+   grep -o 'https://raw.githubusercontent.com/[^"]*' README.md | sort -u |
+     while read -r url; do curl -s -o /dev/null -w "%{http_code} $url\n" "$url"; done
+   ```
+
+   Each line should start with `200`.
+7. `flutter pub publish`.
+8. Check that pub.dev shows the new version with its images, and that CI passes.

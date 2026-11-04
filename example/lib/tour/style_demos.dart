@@ -241,8 +241,10 @@ class _ThemeDemoState extends State<ThemeDemo> {
     final theme = ThemeData(
       colorSchemeSeed: _brand,
       brightness: _dark ? Brightness.dark : Brightness.light,
+      // Keeps the app's button theme, such as the haptics and sound set in
+      // Settings, and only changes the main style.
       extensions: [
-        BouncyButtonTheme(
+        (BouncyButtonTheme.of(context) ?? const BouncyButtonTheme()).copyWith(
           primaryStyle: BouncyButtonStyle.fromSize(BouncyButtonSize.medium),
         ),
       ],

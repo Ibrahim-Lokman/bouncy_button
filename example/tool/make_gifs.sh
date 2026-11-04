@@ -23,12 +23,21 @@ fi
 filter=()
 if [[ $# -gt 0 ]]; then
   filter=(--plain-name "$1")
+else
+  # A full run starts clean, so frames of removed demos don't linger.
+  rm -rf "$frames"
 fi
 RECORD_GIFS=1 flutter test test/gifs/record_gifs_test.dart ${filter[@]+"${filter[@]}"}
 
 mkdir -p "$out"
 too_big=0
-for dir in "$frames"/*/; do
+shopt -s nullglob
+dirs=("$frames"/*/)
+if ((${#dirs[@]} == 0)); then
+  echo "No frames were recorded." >&2
+  exit 1
+fi
+for dir in "${dirs[@]}"; do
   id=$(basename "$dir")
   if [[ $# -gt 0 && $id != *"$1"* ]]; then
     continue
@@ -38,7 +47,8 @@ for dir in "$frames"/*/; do
     -vf "scale=400:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128[p];[b][p]paletteuse=dither=none" \
     "$out/$id.png"
 
-  # A feature shown by a screenshot only has no frames.
+  # A feature shown by a screenshot only has no frames, and no GIF.
+  rm -f "$out/$id.gif"
   if [[ -f "$dir/0000.png" ]]; then
     ffmpeg -v error -y -framerate 20 -i "$dir/%04d.png" \
       -vf "fps=15,scale=400:-1:flags=lanczos,split[a][b];[a]palettegen=stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle" \

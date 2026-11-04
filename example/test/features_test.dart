@@ -1,3 +1,7 @@
+// Resets the once-per-run warnings, so these tests don't depend on order.
+// ignore: implementation_imports
+import 'package:bouncy_button/src/debug_checks.dart'
+    show debugResetBouncyWarnings;
 import 'package:bouncy_button_example/state/warning_log.dart';
 import 'package:bouncy_button_example/tour/feature_demos.dart';
 import 'package:flutter/material.dart';
@@ -43,13 +47,9 @@ void main() {
 
   testWidgets('every demo builds without a single debug warning',
       (tester) async {
-    final warnings = <String>[];
-    final original = debugPrint;
-    debugPrint = (String? message, {int? wrapWidth}) {
-      if (message != null && message.startsWith('bouncy_button:')) {
-        warnings.add(message);
-      }
-    };
+    debugResetBouncyWarnings();
+    bouncyWarnings.value = const [];
+    final restore = captureBouncyWarnings();
     try {
       for (final brightness in Brightness.values) {
         for (final demo in [...featureDemos, heroDemo]) {
@@ -58,9 +58,10 @@ void main() {
         }
       }
     } finally {
-      debugPrint = original;
+      restore();
     }
-    expect(warnings, isEmpty);
+    await tester.pump();
+    expect(bouncyWarnings.value, isEmpty);
   });
 
   testWidgets('loading shows the text, then a tick', (tester) async {
@@ -130,6 +131,7 @@ void main() {
 
   testWidgets('buttons with mistakes show their warnings on screen',
       (tester) async {
+    debugResetBouncyWarnings();
     bouncyWarnings.value = const [];
     final restore = captureBouncyWarnings();
     try {
