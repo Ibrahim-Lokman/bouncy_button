@@ -342,6 +342,9 @@ class CustomLooksDemo extends StatelessWidget {
             ),
             BouncyButton(
               onPressed: () {},
+              // A fixed width, so the button doesn't move when its content
+              // changes while held.
+              style: const BouncyButtonStyle(width: 180),
               // The content can change while the button is held.
               builder: (context, isPressed) => Padding(
                 padding:

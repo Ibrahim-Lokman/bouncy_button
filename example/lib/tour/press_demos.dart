@@ -17,6 +17,8 @@ class PressDemo extends StatelessWidget {
           onPressed: () {},
           style: BouncyButtonStyle(
             backgroundColor: Colors.teal.shade700,
+            // A lighter depth, as the default turns black on dark colors.
+            shadowDarkness: BouncyButtonStyle.shadowLight,
             elevation: 12,
             borderRadius: BorderRadius.circular(18),
           ),
@@ -159,6 +161,8 @@ class MotionDemo extends StatelessWidget {
           onPressed: () {},
           style: medium.copyWith(
             backgroundColor: Colors.teal.shade700,
+            // A lighter depth, as the default turns black on dark colors.
+            shadowDarkness: BouncyButtonStyle.shadowLight,
             borderRadius: BorderRadius.circular(28),
             pressedBorderRadius: BorderRadius.circular(6),
           ),
@@ -265,6 +269,8 @@ class HeroDemo extends StatelessWidget {
             style: BouncyButtonStyle.primary.copyWith(
               width: double.infinity,
               backgroundColor: Colors.teal.shade700,
+              // A lighter depth, as the default turns black on dark colors.
+              shadowDarkness: BouncyButtonStyle.shadowLight,
             ),
             child: const Text(r'Pay $24.00'),
           ),

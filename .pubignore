@@ -41,6 +41,8 @@ coverage/
 
 # Repository-only assets. README images load from GitHub.
 gifs/
+screenshots/ss1.png
 screenshots/ss2.png
+screenshots/ss3.png
 screenshots/ss4.png
 doc/

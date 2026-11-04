@@ -163,6 +163,7 @@ final List<FeatureDemo> featureDemos = [
     summary: 'Gradients, borders, shadows, content that changes while '
         'pressed, and color palettes.',
     builder: (_) => const CustomLooksDemo(),
+    recordSize: const Size(400, 360),
   ),
   FeatureDemo(
     id: '17-haptics-sound',

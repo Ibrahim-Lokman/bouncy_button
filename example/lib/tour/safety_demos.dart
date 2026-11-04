@@ -98,7 +98,10 @@ class _DoubleTapDemoState extends State<DoubleTapDemo> {
               setState(() => _charges++);
               await Future<void>.delayed(const Duration(milliseconds: 700));
             },
-            style: style.copyWith(backgroundColor: Colors.teal.shade700),
+            style: style.copyWith(
+              backgroundColor: Colors.teal.shade700,
+              shadowDarkness: BouncyButtonStyle.shadowLight,
+            ),
             child: const Text('Pay (async)'),
           ),
           'Charged ${_times(_charges)}',
@@ -270,7 +273,10 @@ class _ControlDemoState extends State<ControlDemo> {
               controller: _save,
               onPressedAsync: _wait,
               feedback: const BouncyButtonFeedback(loadingText: 'Saving…'),
-              style: BouncyButtonStyle.fromSize(BouncyButtonSize.medium),
+              // Wide enough for the loading text, as the button keeps its
+              // size while loading.
+              style: BouncyButtonStyle.fromSize(BouncyButtonSize.medium)
+                  .copyWith(minWidth: 130),
               child: const Text('Save'),
             ),
             OutlinedButton(

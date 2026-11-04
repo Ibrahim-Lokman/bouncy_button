@@ -25,10 +25,14 @@ flutter:
   uses-material-design: true
 
 screenshots:
-  - description: Basic and animated BouncyButton styles in a light theme.
-    path: screenshots/ss1.png
-  - description: Animated and styled BouncyButton variants in a dark theme.
-    path: screenshots/ss3.png
+  - description: Bouncy buttons with a 3D press, in different depths and shapes.
+    path: screenshots/feature-press.png
+  - description: A pay button showing a spinner and "Paying…" while it works.
+    path: screenshots/feature-loading.png
+  - description: Filled, tonal, outlined, ghost, and destructive buttons, in three sizes.
+    path: screenshots/feature-styles.png
+  - description: Frosted glass buttons over a colorful background.
+    path: screenshots/feature-glass.png
 
 topics:
   - button

@@ -172,7 +172,22 @@ class _DebugChecksDemoState extends State<DebugChecksDemo> {
                   for (final warning in warnings)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 6),
-                      child: Text('⚠ ${_shorten(warning)}', style: style),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsetsDirectional.only(top: 1, end: 6),
+                            child: Icon(
+                              Icons.warning_amber_rounded,
+                              color: Color(0xFFFFCA28),
+                              size: 15,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(_shorten(warning), style: style),
+                          ),
+                        ],
+                      ),
                     ),
                 ],
               );
