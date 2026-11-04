@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 const List<String> _tabs = [
-  'Gallery',
+  'Features',
   'Shop',
   'Checkout',
   'Playground',
@@ -31,6 +31,33 @@ Future<(DemoSettings, MockBackend)> _pumpApp(
   );
   await tester.pumpAndSettle();
   return (demoSettings, backend);
+}
+
+/// Opens the Gallery, which is at the end of the Features tab.
+Future<void> _openGallery(WidgetTester tester) async {
+  final button = find.text('See every option');
+  // The Features list, found without hitTestable, because a list that is
+  // still scrolling ignores pointers and isn't hit-testable meanwhile.
+  await tester.scrollUntilVisible(
+    button,
+    500,
+    maxScrolls: 200,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
+
+/// Pumps the app and opens the Gallery.
+Future<(DemoSettings, MockBackend)> _pumpGallery(
+  WidgetTester tester, {
+  DemoSettings? settings,
+  Size size = const Size(400, 800),
+}) async {
+  final result = await _pumpApp(tester, settings: settings, size: size);
+  await _openGallery(tester);
+  return result;
 }
 
 Future<void> _openTab(WidgetTester tester, String label) async {
@@ -104,6 +131,19 @@ void main() {
             await tester.pumpAndSettle();
             expect(tester.takeException(), isNull, reason: 'on the $tab tab');
           }
+          if (tab == 'Features') {
+            // The Gallery opens from the end of the Features tab.
+            await _openGallery(tester);
+            await tester.fling(
+              find.byType(ListView).hitTestable().first,
+              const Offset(0, -40000),
+              5000,
+            );
+            await tester.pumpAndSettle();
+            expect(tester.takeException(), isNull, reason: 'in the Gallery');
+            await tester.pageBack();
+            await tester.pumpAndSettle();
+          }
         }
       });
     });
@@ -118,7 +158,7 @@ void main() {
 
   group('gallery', () {
     testWidgets('pressed buttons appear in the event log', (tester) async {
-      await _pumpApp(tester);
+      await _pumpGallery(tester);
       await tester.tap(find.text('Primary'));
       await tester.pumpAndSettle();
 
@@ -128,12 +168,12 @@ void main() {
     });
 
     testWidgets('shows every animation type', (tester) async {
-      await _pumpApp(tester);
+      await _pumpGallery(tester);
       for (final type in BouncyButtonAnimationType.values) {
         await tester.scrollUntilVisible(
           find.text(type.name),
           200,
-          scrollable: find.byType(Scrollable).first,
+          scrollable: find.byType(Scrollable).hitTestable().first,
         );
         expect(find.text(type.name), findsOneWidget);
       }
@@ -507,7 +547,7 @@ void main() {
   testWidgets('the gallery shows toggle, menu, icon, and disabled buttons',
       (tester) async {
     final handle = tester.ensureSemantics();
-    await _pumpApp(tester);
+    await _pumpGallery(tester);
     final scrollable = find.byType(Scrollable).hitTestable().first;
     await tester.scrollUntilVisible(find.text('Mute'), 200,
         scrollable: scrollable);
@@ -567,7 +607,7 @@ void main() {
 
     testWidgets('the cooldown button ignores a quick second tap',
         (tester) async {
-      await _pumpApp(tester, size: const Size(400, 1600));
+      await _pumpGallery(tester, size: const Size(400, 1600));
       final plain = find.textContaining('No cooldown');
       await scrollTo(tester, plain);
       await tester.tap(plain);
@@ -588,7 +628,8 @@ void main() {
       final settings = DemoSettings(
         latency: const Duration(milliseconds: 500),
       );
-      await _pumpApp(tester, settings: settings, size: const Size(400, 1600));
+      await _pumpGallery(tester,
+          settings: settings, size: const Size(400, 1600));
       await scrollTo(tester, find.text('Press from code'));
       await tester.tap(find.text('Press from code'));
       await tester.pump();
@@ -604,7 +645,8 @@ void main() {
       final settings = DemoSettings(
         latency: const Duration(milliseconds: 500),
       );
-      await _pumpApp(tester, settings: settings, size: const Size(400, 1600));
+      await _pumpGallery(tester,
+          settings: settings, size: const Size(400, 1600));
       await scrollTo(tester, find.text('Apple'));
       await tester.tap(find.text('Google'));
       await tester.pump();

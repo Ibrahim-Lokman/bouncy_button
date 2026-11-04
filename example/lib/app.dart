@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 
 import 'data/mock_backend.dart';
 import 'screens/checkout_screen.dart';
-import 'screens/gallery_screen.dart';
+import 'screens/features_screen.dart';
 import 'screens/playground_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/shop_screen.dart';
 import 'state/demo_scope.dart';
 import 'state/demo_settings.dart';
 import 'state/event_log.dart';
+import 'widgets/event_log_sheet.dart';
 
 /// The demo app. Pass [settings] or [backend] to control it from a test.
 class BouncyDemoApp extends StatefulWidget {
@@ -100,7 +101,7 @@ class _Destination {
 }
 
 const List<_Destination> _destinations = [
-  _Destination('Gallery', Icons.widgets_outlined, Icons.widgets),
+  _Destination('Features', Icons.auto_awesome_outlined, Icons.auto_awesome),
   _Destination('Shop', Icons.storefront_outlined, Icons.storefront),
   _Destination('Checkout', Icons.shopping_cart_outlined, Icons.shopping_cart),
   _Destination('Playground', Icons.tune_outlined, Icons.tune),
@@ -122,22 +123,13 @@ class _DemoShellState extends State<DemoShell> {
 
   void _select(int index) => setState(() => _index = index);
 
-  void _showLog() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (_) => _EventLogSheet(log: DemoScope.read(context).log),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final useRail = MediaQuery.sizeOf(context).width >= _railBreakpoint;
     final body = IndexedStack(
       index: _index,
       children: const [
-        GalleryScreen(),
+        FeaturesScreen(),
         ShopScreen(),
         CheckoutScreen(),
         PlaygroundScreen(),
@@ -147,13 +139,7 @@ class _DemoShellState extends State<DemoShell> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_destinations[_index].label),
-        actions: [
-          IconButton(
-            onPressed: _showLog,
-            tooltip: 'Event log',
-            icon: const Icon(Icons.receipt_long),
-          ),
-        ],
+        actions: const [EventLogButton()],
       ),
       body: useRail
           ? Row(
@@ -197,67 +183,6 @@ class _DemoShellState extends State<DemoShell> {
                 ],
               ),
             ),
-    );
-  }
-}
-
-class _EventLogSheet extends StatelessWidget {
-  const _EventLogSheet({required this.log});
-
-  final EventLog log;
-
-  String _time(DateTime time) {
-    String two(int value) => value.toString().padLeft(2, '0');
-    return '${two(time.hour)}:${two(time.minute)}:${two(time.second)}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: MediaQuery.sizeOf(context).height * 0.6,
-      child: ListenableBuilder(
-        listenable: log,
-        builder: (context, _) {
-          final entries = log.entries;
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Event log',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    TextButton(
-                      onPressed: entries.isEmpty ? null : log.clear,
-                      child: const Text('Clear'),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: entries.isEmpty
-                    ? const Center(child: Text('Nothing has happened yet.'))
-                    : ListView.builder(
-                        itemCount: entries.length,
-                        itemBuilder: (context, index) {
-                          final entry = entries[index];
-                          return ListTile(
-                            dense: true,
-                            title: Text(entry.message),
-                            subtitle: Text(_time(entry.time)),
-                          );
-                        },
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
 }

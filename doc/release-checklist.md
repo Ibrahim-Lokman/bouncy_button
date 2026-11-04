@@ -22,7 +22,7 @@ Run through this before publishing a new version. The automated checks catch mos
 
 ## 2. Screen readers
 
-Use the example app's Gallery and Checkout screens, with TalkBack on Android and VoiceOver on iOS.
+Use the example app's Features and Checkout tabs, with TalkBack on Android and VoiceOver on iOS.
 
 | Try | You should hear |
 |---|---|
