@@ -17,7 +17,7 @@
 - **It's safe for real actions.** Give it a function that saves or pays, and it shows a spinner, then a tick or an error. It ignores extra taps while it works, so nothing is sent twice.
 - **It works with what you already have.** Add the same press to any card or image, or add double-tap protection to the Material and Cupertino buttons you already use.
 - **It's accessible out of the box.** Screen readers, keyboards, large text, and the "reduce motion" setting all work with no extra code. In debug builds, it also warns you about common mistakes, such as a missing label or hard-to-read colors.
-- **It's light.** No dependencies beyond Flutter, and it runs on Android, iOS, web, macOS, Windows, and Linux.
+- **It's light.** No dependencies outside the Flutter SDK, and it runs on Android, iOS, web, macOS, Windows, and Linux.
 
 ## Getting started
 
@@ -48,11 +48,11 @@ BouncyButton(
 With no other settings, every button already:
 
 - uses your theme's main color, and picks a readable text color, in light and dark mode
-- gives a light vibration when pressed, on phones that support it
+- gives a light vibration when tapped, on phones that support it
 - tells screen readers it's a button, and reads its label
 - can be reached with Tab and pressed with Enter or Space, with a visible focus ring
 - grows to fit large system text instead of cutting words off
-- stays still when the system asks for reduced motion
+- moves instantly instead of animating when the system asks for reduced motion
 
 Every screenshot and animation below comes from the **Features** tab of the [example app](#example-app), where you can try each one.
 
@@ -111,9 +111,9 @@ BouncyButton(
 | Option | What it changes | Default |
 | --- | --- | --- |
 | `style.elevation` | How deep the press goes, in pixels | `8` |
-| `style.backgroundColor` | The face color | Theme's primary color |
+| `style.backgroundColor` | The face color | Theme's primary color, for a filled face |
 | `style.foregroundColor` | Text and icon color | Picked to be readable on the face |
-| `style.shadowColor` | The color of the layer underneath | A darker shade of the face |
+| `style.shadowColor` | The color of the layer underneath | A darker shade of the face. Outlined: the border color |
 | `style.shadowDarkness` | How much darker that layer is, from 0 to 1. `BouncyButtonStyle.shadowLight` is 0.12 | `0.3` (`shadowDark`) |
 | `style.borderRadius`, `style.shape` | Corners, or a circle | 12, rectangle |
 | `style.height`, `style.width` | Smallest height, and width | 60, fits the label |
@@ -270,7 +270,7 @@ BouncyButton(
 )
 ```
 
-**Out of the box:** no spring and no shape change, just a quick 70 millisecond press. Hover lifts the face by 2 pixels, with a mouse only. People who turn on "reduce motion" get instant, still buttons instead.
+**Out of the box:** no spring and no shape change, just a quick 70 millisecond press. Hover lifts the face by 2 pixels, with a mouse only. With "reduce motion" turned on, buttons move instantly instead of animating: the face still sinks while held, but there's no spring, hover lift, or error shake.
 
 **What you can change:**
 
@@ -339,7 +339,7 @@ BouncyButton(
 | --- | --- | --- |
 | The main action, such as **Pay** | `BouncyButtonStyle.primary` | Solid color |
 | Secondary actions, such as **Apply** | `BouncyButtonStyle.tonal` | Softer color |
-| Minor actions, such as **Cancel** | `BouncyButtonStyle.outlined` or `ghost` | Outline only, or text only |
+| Minor actions, such as **Cancel** | `BouncyButtonStyle.outlined` or `ghost` | A colored outline on a plain face, or text only |
 | Deleting something | `BouncyButtonStyle.destructive` | Your theme's error red |
 
 **How to use it:**
@@ -444,7 +444,7 @@ BouncyAsyncBuilder(
 | Option | What it changes | Default |
 | --- | --- | --- |
 | `disableWhileBusy` | Passes a null callback while busy, so the button looks disabled. It loses keyboard focus | `false` |
-| `feedback` | How long results last, the minimum loading time, and what screen readers say. Its builders aren't used | Standard feedback |
+| `feedback` | How long results last, the minimum loading time, and what screen readers say. Its builders aren't used | Built-in. The theme's `defaultFeedback` isn't used |
 | `onError`, `cooldown`, `controller`, `timeout`, `confirm` | The same as on `BouncyButton` | None |
 | `announceStatus` | Whether screen readers hear status changes. Turn off if `builder` returns several controls | `true` |
 
@@ -580,7 +580,7 @@ BouncyButton.icon(
 **What it does:** in debug builds, Bouncy Button prints a warning in your console when a button will be hard to use. Each warning says how to fix it, and appears only once. The example app shows them on screen, as above. It warns about:
 - **An icon-only button with no label,** which screen readers can only call "button".
 - **Hard-to-read text:** contrast below what accessibility guidelines ask for.
-- **A small tap area:** smaller than 48 by 48, or 44 by 44 on iPhone and Mac.
+- **A small tap area:** smaller than 48 by 48, or 44 by 44 on iPhone, iPad, and Mac.
 - **A label that leaves out the visible text,** which breaks voice control.
 - **Another tappable widget inside a button.**
 - **A toggle whose text changes with its state.**
@@ -675,7 +675,7 @@ MaterialApp(
 | --- | --- | --- |
 | `primaryStyle` | Style of `BouncyButton` and `BouncyButton.primary` | Built-in |
 | `secondaryStyle`, `tertiaryStyle`, `iconStyle` | Style of `.secondary`, `.tertiary`, and `.icon` | Built-in |
-| `defaultAnimation`, `defaultInteraction`, `defaultFeedback` | Animation, haptics and highlights, and loading feedback for every button | Built-in |
+| `defaultAnimation`, `defaultInteraction`, `defaultFeedback` | Animation, haptics and highlights, and loading feedback for every `BouncyButton`. Group segments use the group's own `interaction`, and `BouncyAsyncBuilder` its own `feedback` | Built-in |
 | `BouncyButtonScope(theme: ...)` | The same theme without the Material `Theme`, for apps using Flutter's newer `material_ui` package | None |
 
 ### Colors, gradients, and custom looks
@@ -743,18 +743,19 @@ BouncyButton(
 ```
 
 **Out of the box:**
-- **Haptics:** a light vibration on every press, on phones that support it.
+- **Haptics:** a light vibration on every tap, on phones that support it. Keyboard and screen reader presses don't vibrate.
 - **Sound:** none.
 
 **What you can change:**
 
 | Option | What it changes | Default |
 | --- | --- | --- |
-| `enableHapticFeedback` | Vibration on press | `true` |
+| `enableHapticFeedback` | Vibration on a tap | `true` |
 | `hapticFeedbackType` | `light`, `medium`, `heavy`, `selection`, or `vibrate` | `light` |
 | `enableSound` | The system click. Some platforms have none, and web plays nothing | `false` |
 | `onPressSound` | Plays your own sound, such as with an audio package | None |
-| `enableSplash`, `splashColor`, `highlightColor`, `splashFactory` | A Material ripple on the face | Off |
+| `enableSplash`, `splashColor`, `splashFactory` | A Material ripple on the face | Off |
+| `highlightColor` | The ripple's highlight, and the tint of a pressed ghost or glass button | A faint tint of the text color |
 | `hoverColor`, `focusColor`, `cursor` | Mouse and keyboard highlights, and the mouse cursor | A tint of the text color, the text color, a pointing hand |
 
 ### Test your buttons
@@ -833,20 +834,20 @@ The button is disabled when `enabled` is `false`, or it has no `onPressed`, `onP
 | Option | What it does | Default |
 | --- | --- | --- |
 | `height` | Smallest face height. Circles are exactly this tall | `60` |
-| `width` | Fixed width | Fits the label |
+| `width` | Fixed width | Fits the label. A circle is as wide as it is tall |
 | `minWidth` | Smallest width | None |
 | `elevation` | Depth of the press | `8` |
 | `fill` | `filled`, `tonal`, `outlined`, `ghost`, or `glass` | `filled` |
 | `tone` | `normal` or `destructive` | `normal` |
-| `backgroundColor` | Face color. For `outlined` and `ghost`, the text and border color | Theme's primary, or error |
+| `backgroundColor` | Face color. For `outlined` and `ghost`, the text and border color. For `glass`, the tint | Filled: primary. Tonal: secondary container. Outlined and ghost: primary text, with an `outline` border. Glass: a see-through surface tint. Error colors with the destructive tone |
 | `foregroundColor` | Text and icon color | Readable on the face |
-| `disabledColor` | Face color when disabled | Grey |
+| `disabledColor` | Face color when disabled. For `outlined` and `ghost`, the text color | Filled: grey. Tonal: a light grey. Outlined and ghost: faded text. Not used by glass |
 | `hslColor` | Face color as HSL | None |
 | `gradient`, `disabledGradient` | A gradient face, and when disabled | None, a darker gradient |
 | `shadowColor`, `shadowDarkness` | The depth layer's color, or how much darker than the face | Generated, `0.3` |
 | `shadow`, `shadows` | Soft shadows around the face | None |
 | `borderRadius`, `pressedBorderRadius` | Corners at rest and when pressed | `12`, no change |
-| `border` | A border | None. Outlined has its own |
+| `border` | A border | None. Outlined and glass draw their own |
 | `shape` | `BoxShape.rectangle` or `circle` | Rectangle |
 | `padding`, `margin` | Space inside, and outside | 24 by 12, none |
 | `textStyle`, `iconSize` | Text style and icon size | Theme's |
@@ -897,9 +898,10 @@ The button is disabled when `enabled` is `false`, or it has no `onPressed`, `onP
 
 | Option | What it does | Default |
 | --- | --- | --- |
-| `enableHapticFeedback`, `hapticFeedbackType` | Vibration on press | `true`, `light` |
+| `enableHapticFeedback`, `hapticFeedbackType` | Vibration on a tap | `true`, `light` |
 | `enableSound`, `onPressSound` | System click, or your own sound | `false`, none |
-| `enableSplash`, `splashColor`, `highlightColor`, `splashFactory` | Material ripple | Off |
+| `enableSplash`, `splashColor`, `splashFactory` | Material ripple | Off |
+| `highlightColor` | The ripple's highlight, and the tint of a pressed ghost or glass button | A faint tint of the text color |
 | `hoverColor` | Overlay under a mouse | A faint tint of the text color |
 | `hoverLift` | How far the face rises under a mouse | `2` |
 | `focusColor` | Keyboard focus ring color | The text color |
@@ -940,7 +942,8 @@ The button is disabled when `enabled` is `false`, or it has no `onPressed`, `onP
 | --- | --- | --- |
 | `onPressed` | The async action. If null, `builder` gets a null callback | Required |
 | `builder` | Builds your button from the guarded callback and the status | Required |
-| `onError`, `feedback`, `cooldown`, `controller`, `timeout`, `confirm` | As on `BouncyButton` | None |
+| `onError`, `cooldown`, `controller`, `timeout`, `confirm` | As on `BouncyButton` | None |
+| `feedback` | Timings and screen reader labels. Its builders aren't used | Built-in. The theme's `defaultFeedback` isn't used |
 | `disableWhileBusy` | Passes a null callback while busy | `false` |
 | `announceStatus` | Screen readers hear status changes | `true` |
 
@@ -966,7 +969,7 @@ The button is disabled when `enabled` is `false`, or it has no `onPressed`, `onP
 | `BouncyButtonTheme` | `primaryStyle`, `secondaryStyle`, `tertiaryStyle`, `iconStyle`, `defaultAnimation`, `defaultInteraction`, `defaultFeedback`. Add it to `ThemeData.extensions` | None |
 | `BouncyButtonScope` | `theme`, `child`. A theme without the Material `Theme` | |
 
-Lookup order for styles and settings: the button's own value, then the nearest `BouncyButtonScope`, then `BouncyButtonTheme` in your theme, then the built-in default.
+**How settings are looked up:** `style`, `animation`, `interaction`, and `feedback` are each used as a whole, never merged. A button uses its own value. Otherwise it uses the nearest `BouncyButtonScope`'s theme, or, without a scope, the `BouncyButtonTheme` in `ThemeData.extensions`. Otherwise it uses the built-in default. So a scope replaces the Material theme's `BouncyButtonTheme` completely, and a `style` passed to one button replaces the whole themed style, so copy what you need from it with `copyWith`.
 
 ### Helpers and enums
 
@@ -985,9 +988,9 @@ Lookup order for styles and settings: the button's own value, then the nearest `
 | `debugBouncyChecksEnabled` | Turns the debug warnings on or off. Default `true` |
 | `expectAccessibleButton(tester, finder, {pressCount, checkContrast: true})` | The test helper, from `package:bouncy_button/testing.dart` |
 
-**Deprecated:** `HapticFeedbackType` is now `BouncyHapticFeedbackType`, and `GradientExtension` is now `BouncyGradientExtension`. The old names still work.
+**Deprecated:** `HapticFeedbackType` is now `BouncyHapticFeedbackType`, and `GradientExtension` is now `BouncyGradientExtension`, with its `scale` method renamed `scaleLightness`. The old names still work, but note that `gradient.scale(x)` calls Flutter's own `Gradient.scale`, which fades the colors, rather than this package's method.
 
-**Libraries:** `package:bouncy_button/bouncy_button.dart` has everything. `package:bouncy_button/pressable.dart` has `BouncyPressable`, `BouncyAsyncBuilder`, the controller, and the exclusive scope, without Material. `package:bouncy_button/testing.dart` has the test helper.
+**Libraries:** `package:bouncy_button/bouncy_button.dart` has everything. `package:bouncy_button/pressable.dart` has, without Material, `BouncyPressable`, `BouncyAsyncBuilder`, `BouncyButtonController`, `BouncyExclusiveScope`, `BouncyPressSpring`, `BouncyButtonFeedback`, `BouncyButtonStatus`, `BouncyHapticFeedbackType`, and `debugBouncyChecksEnabled`. `package:bouncy_button/testing.dart` has the test helper.
 
 ## Example app
 
@@ -1003,7 +1006,7 @@ flutter run
 | **Features** | Every feature above, in the same order, with a live demo. "See every option" at the end opens a gallery of every style and setting |
 | **Shop** | Product cards with favorites, and loading, empty, and error states |
 | **Checkout** | A payment that can succeed, fail, time out, and retry without charging twice |
-| **Playground** | Sliders for every style option, with the code to copy |
+| **Playground** | Sliders and switches for height, depth, corners, timing, shadow, fill, color, animation type, and spring, with the code to copy |
 | **Settings** | Mock network speed and failures, theme, text size, right to left, and reduce motion |
 
 The screenshots and animations in this README are recorded from the Features tab. To record them again after changing it, run `example/tool/make_gifs.sh`, which needs `ffmpeg`.
@@ -1012,9 +1015,12 @@ The screenshots and animations in this README are recorded from the Features tab
 
 ### From 2.1 to 2.2
 
-Nothing needs to change in your code. Three things work differently:
+Nothing needs to change in your code. A few things work differently:
 
 - **Held keys:** holding Enter or Space on a button presses it once, instead of repeating.
+- **Timing with animations off:** when the system turns animations off, `cooldown`, `minLoadingDuration`, and `resultDuration` now keep their full length. Before, Flutter shortened them to 5%.
+- **Spinner color:** the loading spinner now matches the button's text, so it's visible on dark buttons.
+- **Focus ring:** it's 3 pixels wide instead of 2 in high contrast mode.
 - **Button groups:** segments are announced as "checked" or "not checked", like Flutter's `SegmentedButton`. Tests that look for a selected flag on a segment should check `isChecked` instead.
 - **Warnings:** your debug console may show the new warnings. Each one describes a real problem, but you can turn them off with `debugBouncyChecksEnabled = false`.
 
