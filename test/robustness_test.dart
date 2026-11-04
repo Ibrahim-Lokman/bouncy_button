@@ -323,6 +323,35 @@ void main() {
     });
   });
 
+  testWidgets('the loading spinner uses the button text color', (tester) async {
+    Color? spinnerColor() =>
+        tester.widget<CircularProgressIndicator>(_spinner).color;
+    await tester.pumpWidget(
+      _app(
+        BouncyButton(
+          isLoading: true,
+          onPressed: () {},
+          child: const Text('Pay'),
+        ),
+      ),
+    );
+    final scheme =
+        Theme.of(tester.element(find.byType(BouncyButton))).colorScheme;
+    expect(spinnerColor(), scheme.onPrimary);
+
+    await tester.pumpWidget(
+      _app(
+        BouncyButton(
+          isLoading: true,
+          onPressed: () {},
+          style: BouncyButtonStyle.outlined,
+          child: const Text('Pay'),
+        ),
+      ),
+    );
+    expect(spinnerColor(), scheme.primary);
+  });
+
   testWidgets('a states controller can be replaced after disposing the old',
       (tester) async {
     var states = WidgetStatesController();

@@ -234,6 +234,7 @@ void main() {
                           ),
                           BouncyButton(
                             isLoading: true,
+                            onPressed: () {},
                             style: _styleFor(fill),
                             child: const Text('Pay'),
                           ),

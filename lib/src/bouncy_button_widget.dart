@@ -1190,7 +1190,13 @@ class _BouncyButtonState extends State<BouncyButton>
         if (!showContent)
           Positioned.fill(
             child: ExcludeSemantics(
-              child: Center(child: _buildStatus(context, status)),
+              child: Center(
+                // A Builder, so the status reads the button's text and icon
+                // colors, which are applied around this content later.
+                child: Builder(
+                  builder: (context) => _buildStatus(context, status),
+                ),
+              ),
             ),
           ),
       ],

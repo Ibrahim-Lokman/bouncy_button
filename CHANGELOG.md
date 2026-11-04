@@ -23,6 +23,7 @@ This release goes through a checklist of common button mistakes, and makes each 
 - A button with a controller could report "can only be attached to one widget at a time" when a list moved it to another position.
 - When the system asks apps to turn animations off, such as Remove animations on Android, Flutter shortened `cooldown`, `minLoadingDuration`, and `resultDuration` to 5% of their length, so a 600 millisecond cooldown lasted 30. They now keep their full length.
 - An `onError` that throws no longer leaves a button loading or a `BouncyExclusiveScope` locked. Its error is reported to Flutter instead.
+- The default loading spinner now uses the button's text color. It took the color from outside the button, so it was dark, and hard to see, on dark buttons. Custom `loadingBuilder`, `successBuilder`, and `errorBuilder` content also gets the button's colors now.
 
 ### Changed
 
