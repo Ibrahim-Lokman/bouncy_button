@@ -25,6 +25,11 @@ This release goes through a checklist of common button mistakes, and makes each 
 - An `onError` that throws no longer leaves a button loading or a `BouncyExclusiveScope` locked. Its error is reported to Flutter instead.
 - The default loading spinner now uses the button's text color. It took the color from outside the button, so it was dark, and hard to see, on dark buttons. Custom `loadingBuilder`, `successBuilder`, and `errorBuilder` content also gets the button's colors now.
 
+### Documentation
+
+- The README is now the full guide. Every feature has a plain-words explanation, when it helps, a code sample, its defaults, what you can change, and a screenshot and GIF, followed by a reference of every option and its default.
+- The example app opens on a new Features tab, which shows every feature in the README's order. The README's images are recorded from it with `example/tool/make_gifs.sh`.
+
 ### Changed
 
 - `BouncyButtonGroup` segments use checked semantics, as Flutter's `SegmentedButton` does, so screen readers also announce unselected ones. Tests that looked for a selected flag on a segment should check `isChecked`.

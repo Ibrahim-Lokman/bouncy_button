@@ -68,6 +68,8 @@ On a real phone:
 ## 6. Publish
 
 - [ ] Update the version in `pubspec.yaml` and add a `CHANGELOG.md` entry.
-- [ ] Commit, then tag the release as `vX.Y.Z`.
+- [ ] If the Features tab changed, record the README's images again with `example/tool/make_gifs.sh`, and look at them.
+- [ ] Change the tag in the README's image URLs, `.../bouncy_button/vX.Y.Z/gifs/...`, to the new version. Each version's page on pub.dev then keeps its own images.
+- [ ] Commit, then tag the release as `vX.Y.Z`. The README's images load from that tag, so it must be pushed before people see the page.
 - [ ] `flutter pub publish`.
 - [ ] Push the commit and the tag, then check that pub.dev shows the new version and that CI passes.
